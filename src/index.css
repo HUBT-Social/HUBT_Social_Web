@@ -2,23 +2,138 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import 'slick-carousel/slick/slick.css';
+@import 'slick-carousel/slick/slick-theme.css';
 
+@theme {
+  /* Primary Colors */
+  --color-primary-100: #006D3B;
+  --color-primary-90: #007F44;
+  --color-primary-80: #00964D;
+  --color-primary-70: #00AD57;
+  --color-primary-60: #00C261;
+  --color-primary-50: #00D76B;
+  --color-primary-40: #00E875;
+  --color-primary-30: #00F980;
+  --color-primary-20: #CCF0E0;
+  --color-primary-10: #E6F7F0;
+  --color-on-primary: #FFFFFF;
+  --color-primary-container: #00512D;
+  --color-on-primary-container: #00E875;
+
+  /* Secondary Colors */
+  --color-secondary-100: #004D40;
+  --color-secondary-90: #005F52;
+  --color-secondary-80: #007166;
+  --color-secondary-70: #008379;
+  --color-secondary-60: #00968C;
+  --color-secondary-50: #00A99F;
+  --color-secondary-40: #00BCB2;
+  --color-secondary-30: #00CFC5;
+  --color-secondary-20: #CCE8E5;
+  --color-secondary-10: #E6F3F2;
+  --color-on-secondary: #FFFFFF;
+  --color-secondary-container: #00382C;
+  --color-on-secondary-container: #00CFC5;
+
+  /* Tertiary Colors */
+  --color-tertiary-100: #004D73;
+  --color-tertiary-90: #005F8A;
+  --color-tertiary-80: #0072A1;
+  --color-tertiary-70: #0085B8;
+  --color-tertiary-60: #0098CF;
+  --color-tertiary-50: #00ABE6;
+  --color-tertiary-40: #00BEFD;
+  --color-tertiary-30: #00D1FF;
+  --color-tertiary-20: #CCEAFD;
+  --color-tertiary-10: #E6F4FF;
+  --color-on-tertiary: #FFFFFF;
+  --color-tertiary-container: #003A58;
+  --color-on-tertiary-container: #00D1FF;
+
+  /* Error Colors */
+  --color-error-100: #8A0000;
+  --color-error-90: #A30000;
+  --color-error-80: #BD0000;
+  --color-error-70: #D60000;
+  --color-error-60: #F00000;
+  --color-error-50: #FF1A1A;
+  --color-error-40: #FF3333;
+  --color-error-30: #FF4D4D;
+  --color-error-20: #FFDCDC;
+  --color-error-10: #FFECEC;
+  --color-on-error: #FFFFFF;
+  --color-error-container: #690000;
+  --color-on-error-container: #FF4D4D;
+
+  /* Surface Colors */
+  --color-surface-100: #1C1C1C;
+  --color-surface-90: #2A2A2A;
+  --color-surface-80: #383838;
+  --color-surface-70: #464646;
+  --color-surface-60: #555555;
+  --color-surface-50: #636363;
+  --color-surface-40: #717171;
+  --color-surface-30: #7F7F7F;
+  --color-surface-20: #8D8D8D;
+  --color-surface-10: #9B9B9B;
+  --color-on-surface: #FFFFFF;
+  --color-surface-plus-1: #E6E0E9;
+  --color-surface-plus-2: #F0EAF2;
+  --color-surface-plus-3: #F9F4FA;
+  --color-surface-plus-4: #E6E0E9;
+  --color-surface-plus-5: #F0EAF2;
+
+  /* Neutral/Background Colors */
+  --color-neutral-100: #1C2526;
+  --color-neutral-90: #2A3334;
+  --color-neutral-80: #384041;
+  --color-neutral-70: #464E4F;
+  --color-neutral-60: #555B5C;
+  --color-neutral-50: #636869;
+  --color-neutral-40: #717576;
+  --color-neutral-30: #7F8384;
+  --color-neutral-20: #8D9192;
+  --color-neutral-10: #9B9F9F;
+  --color-on-neutral: #FFFFFF;
+}
 @layer base {
   :root {
-    --color-primary: hsl(0, 0%, 13%); /* hsl(0, 0%, 13%) ~ #212121 */
-    --color-secondary: hsl(0, 0%, 47%);
-    --color-text-base: hsl(0, 0%, 100%);
-    --color-bg-primary: hsl(0, 0%, 100%);
+    --background: var(--color-surface-plus-3);
+    --text-color: var(--color-neutral-90);
+    --primary: var(--color-primary-50);
+    --card-bg: #FFFFFF;
   }
 
-  * {
-    @apply transition-colors duration-300;
-    transition-timing-function: ease-in-out;
+  [data-theme="dark"] {
+    --background: var(--color-neutral-90);
+    --text-color: var(--color-on-surface);
+    --primary: var(--color-primary-30);
+    --card-bg: #2A2A2A;
   }
-}
-.theme-dark {
-  --color-primary: hsl(0, 0%, 100%);
-  --color-secondary: hsl(0, 0%, 70%);
-  --color-text-base: hsl(0, 0%, 0%);
-  --color-bg-primary: hsl(0, 0%, 0%);
+
+  body {
+    background-color: var(--background);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+  .ant-card {
+    background-color: var(--card-bg);
+    transition: background-color 0.3s;
+  }
+
+  .ant-modal-content {
+    background-color: var(--card-bg);
+    transition: background-color 0.3s;
+  }
+
+  .ant-typography, .ant-form-item-label > label {
+    color: var(--text-color);
+  }
+
+  .ant-btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+  }
 }

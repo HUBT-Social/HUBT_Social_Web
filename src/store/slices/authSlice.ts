@@ -1,12 +1,14 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { persistReducer } from 'redux-persist';
+import storage from 'redux-persist/lib/storage';
 import instance from '../../config/axios';
 import { RootState } from '../store';
 import { AUTH_ENDPOINTS, USER_ENDPOINTS } from '../../services/endpoints';
-import { handleLoginSuccess, handleLogout, userFromStorage } from '../../helper/tokenHelper';
+import { handleLoginSuccess, handleLogout } from '../../helper/tokenHelper';
 import { LoginResponse, UserToken } from '../../types/User';
 
 // ----------------------------
-// Interface định nghĩa
+// Interfaces
 // ----------------------------
 
 interface UserState {
@@ -20,6 +22,7 @@ interface UserState {
   phoneNumber: string;
 }
 
+
 interface AuthState {
   loading: boolean;
   token: UserToken | null;
@@ -31,73 +34,83 @@ interface AuthState {
 }
 
 // ----------------------------
-// Initial state
+// Initial State
 // ----------------------------
 
 const initialState: AuthState = {
   loading: false,
   token: null,
   isAuthenticated: false,
-  user: userFromStorage ? JSON.parse(userFromStorage) : null,
+  user: null,
   userInfo: null,
   status: 'idle',
   error: null,
 };
 
 // ----------------------------
-// Async thunk: Login
+// Async Thunks
 // ----------------------------
 
 export const loginRequest = createAsyncThunk<
   LoginResponse,
   { username: string; password: string },
   { rejectValue: string }
->(
-  'auth/login',
-  async (credentials, { rejectWithValue }) => {
-    try {
-      const response = await instance.post(AUTH_ENDPOINTS.POST_SIGN_IN, JSON.stringify({
-        username: credentials.username,
-        password: credentials.password,
-      }));
-      return response.data as LoginResponse;
-    } catch (error: any) {
-      const errorMessage = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
-      return rejectWithValue(errorMessage);
-    }
+>('auth/login', async (credentials, { rejectWithValue }) => {
+  try {
+    const response = await instance.post(AUTH_ENDPOINTS.POST_SIGN_IN, JSON.stringify(credentials));
+    return response.data as LoginResponse;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
+    return rejectWithValue(errorMessage);
   }
-);
-
-// ----------------------------
-// Async thunk: Lấy thông tin người dùng
-// ----------------------------
+});
 
 export const getInfoUser = createAsyncThunk<
   UserState,
   { accessToken: string },
   { rejectValue: string }
+>('auth/getInfoUser', async ({ accessToken }, { rejectWithValue }) => {
+  try {
+    const response = await instance.get(USER_ENDPOINTS.GET_USER, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+    return response.data as UserState;
+  } catch (error: any) {
+    const errorMessage = error.response?.data?.message || 'Lỗi khi lấy thông tin người dùng';
+    return rejectWithValue(errorMessage);
+  }
+});
+// Thunk để cập nhật thông tin người dùng
+export const updateUserProfile = createAsyncThunk<
+  any,
+  { name: string; email: string },
+  { rejectValue: string }
 >(
-  'auth/getInfoUser',
-  async ({ accessToken }, { rejectWithValue }) => {
+  'user/updateUserProfile',
+  async (profileData, { rejectWithValue }) => {
     try {
-      const response = await instance.get(USER_ENDPOINTS.GET_USER, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-      return response.data as UserState;
+      const response = await instance.put('/user/profile', profileData);
+      return response.data as any;
     } catch (error: any) {
-      const errorMessage = error.response?.data?.message || 'Lỗi khi lấy thông tin người dùng';
+      let errorMessage = 'Đã có lỗi xảy ra khi cập nhật thông tin người dùng';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
       return rejectWithValue(errorMessage);
     }
   }
 );
 
+
 // ----------------------------
 // Slice
 // ----------------------------
 
-const authUserSlice = createSlice({
+const authSlice = createSlice({
   name: 'authUser',
   initialState,
   reducers: {
@@ -114,7 +127,7 @@ const authUserSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // loginRequest
+    // login
     builder
       .addCase(loginRequest.pending, (state) => {
         state.loading = true;
@@ -152,12 +165,23 @@ const authUserSlice = createSlice({
 });
 
 // ----------------------------
-// Export Actions & Reducer
+// Persist Config
 // ----------------------------
 
-export const { logout, clearError } = authUserSlice.actions;
+const persistConfig = {
+  key: 'authUser',
+  storage,
+  whitelist: ['token', 'isAuthenticated', 'user'],
+};
 
-export default authUserSlice.reducer;
+const persistedReducer = persistReducer(persistConfig, authSlice.reducer);
+
+// ----------------------------
+// Export
+// ----------------------------
+
+export const { logout, clearError } = authSlice.actions;
+export default persistedReducer;
 
 // ----------------------------
 // Selectors

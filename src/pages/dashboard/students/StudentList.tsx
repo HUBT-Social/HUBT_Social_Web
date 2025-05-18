@@ -1,100 +1,152 @@
-import React, { useState } from 'react';
-import { Card, Table } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Card, Table, Tag, Spin, Alert, message } from 'antd';
 import StudentEmpty from './StudentEmpty';
-import { Student } from '../../../types/Student';
 import StudentDetail from './StudentDetail';
 import StudentFilter from '../../../components/StudentFilter';
+import {
+  getStudents,
+  selectStudents,
+  selectStudentsLoading,
+  selectStudentsError,
+  selectStudentsFiltered,
+} from '../../../store/slices/studentSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '../../../store/store';
+import { UserInfo } from '../../../types/User';
+import { AlertCircle } from 'lucide-react';
 
+interface GetStudentsPayload { // Define the expected payload structure
+  users: UserInfo[];
+  hasMore: boolean;
+  message: string;
+}
 
 const StudentList: React.FC = () => {
-  const data: Student[] = [
-    { id: '1', name: 'Nguyễn Văn A', email: 'a1@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '2', name: 'Trần Thị B', email: 'b2@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '3', name: 'Lê Văn C', email: 'c3@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '4', name: 'Phạm Thị D', email: 'd4@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '5', name: 'Hoàng Văn E', email: 'e5@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '6', name: 'Đặng Thị F', email: 'f6@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '7', name: 'Ngô Văn G', email: 'g7@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '8', name: 'Vũ Thị H', email: 'h8@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '9', name: 'Bùi Văn I', email: 'i9@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '10', name: 'Dương Thị J', email: 'j10@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '11', name: 'Trịnh Văn K', email: 'k11@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '12', name: 'Lương Thị L', email: 'l12@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '13', name: 'Tô Văn M', email: 'm13@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '14', name: 'Mai Thị N', email: 'n14@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '15', name: 'Châu Văn O', email: 'o15@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '16', name: 'Lý Thị P', email: 'p16@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '17', name: 'Đoàn Văn Q', email: 'q17@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '18', name: 'Thái Thị R', email: 'r18@gmail.com', class: 'TH27.25', gender: 'Female' },
-    { id: '19', name: 'Huỳnh Văn S', email: 's19@gmail.com', class: 'TH27.25', gender: 'Male' },
-    { id: '20', name: 'Lâm Thị T', email: 't20@gmail.com', class: 'TH27.25', gender: 'Female' }, 
-  ];
-  const [currentStudent, setCurrentStudent] = useState<Student | null>(
-    data.length === 0 ? null : data[0]
-  );
+  const dispatch = useDispatch<AppDispatch>();
+  const students = useSelector(selectStudentsFiltered);
+  const isLoading = useSelector(selectStudentsLoading);
+  const error = useSelector(selectStudentsError);
+  const hasFetchedRef = useRef(false);
+  const [currentStudent, setCurrentStudent] = useState<UserInfo | null>(null);
 
-  const handleViewDetail = (id: string) => {
-    const currentStu = data.find(db => db.id === id);
-    if (currentStu) {
-      setCurrentStudent(currentStu);
-      console.log('Selected student:', currentStudent);
+
+  const handleViewDetail = (userName: string) => { // Changed to userName
+    const selected = students.find((stu) => stu.userName === userName);
+    if (selected) {
+      setCurrentStudent(selected);
     }
   };
 
   const columns = [
-    { title: 'Name', dataIndex: 'name', key: 'name' },
-    { title: 'Student Id', dataIndex: 'id', key: 'id' },
-    { title: 'Email Address', dataIndex: 'email', key: 'email' },
-    { title: 'Class Name', dataIndex: 'class', key: 'class' },
-    { title: 'Gender', dataIndex: 'gender', key: 'gender' },
+    {
+      title: 'Mã SV',
+      dataIndex: 'userName',
+      key: 'userName',
+    },
+    {
+      title: 'Họ tên',
+      key: 'fullName',
+      render: (_: any, record: any) =>
+        `${record.lastName} ${record.firstName}`.trim(),
+    },
+    {
+      title: 'Email',
+      dataIndex: 'email',
+      key: 'email',
+    },
+    {
+      title: 'Lớp',
+      dataIndex: 'className',
+      key: 'className',
+    },
+    {
+      title: 'Giới tính',
+      dataIndex: 'gender',
+      key: 'gender',
+      render: (gender: number) => (gender === 1 ? 'Nam' : 'Nữ'),
+    },
+    {
+      title: 'Trạng thái',
+      dataIndex: 'status',
+      key: 'status',
+      render: (status: string) => (
+        <Tag color={status === 'Active' ? 'green' : 'red'}>{status}</Tag>
+      ),
+    },
   ];
 
-
+  // Render different states
+  if (isLoading && !students.length) { // Corrected condition
     return (
-        <>
-        <Card title="Danh sách sinh viên">
-          {data.length === 0 ? (
-            <StudentEmpty />
-          ) : (
-            <div className="flex gap-6 p-4">
-              <div className="flex-1 bg-white p-4 rounded-lg shadow-md">
-                <StudentFilter />
-                <Table
-                  columns={columns}
-                  dataSource={data}
-                  rowKey="id"
-                  pagination={{ pageSize: 8 }}
-                  onRow={(record) => ({
-                    onClick: () => handleViewDetail(record.id), 
-                  })}
-                />
-              </div>
-
-              <div className="w-1/3 bg-white p-6 rounded-lg shadow-md">
-                {currentStudent && (
-                  <div className="mt-6">
-                    <StudentDetail
-                      id={currentStudent.id}
-                      name={currentStudent.name}
-                      email={currentStudent.email}
-                      className={currentStudent.class}
-                      gender={currentStudent.gender}
-                      age={17} // bạn có thể thêm trường age nếu có
-                      avatarUrl="https://randomuser.me/api/portraits/women/44.jpg"
-                      onEdit={() => console.log('Sửa thông tin')}
-                      onDelete={() => {
-                        console.log('Đã xóa học sinh');
-                        setCurrentStudent(null); // reset sau khi xóa
-                      }}
-                    />
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </Card>
-        </>
+      <Card title="Danh sách sinh viên">
+        <Spin tip="Đang tải..." />
+      </Card>
     );
+  }
+
+  if (error) {
+    return (
+      <Card title="Danh sách sinh viên">
+        <div className="flex items-center gap-2 text-red-500">
+          <AlertCircle className="h-5 w-5" />
+          <p>Lỗi khi tải danh sách sinh viên: {error}</p>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <>
+      <StudentFilter />
+      <Card title="Danh sách sinh viên" className="rounded-lg shadow-md">
+        {students.length === 0 ? (
+          <StudentEmpty /> //  Removed onRetry.  Handled in initial fetch.
+        ) : (
+          <div className="flex gap-6 mt-6">
+            <div className="flex-1 bg-white p-4 rounded-lg shadow-md border">
+              <Table
+                className="hover:cursor-pointer"
+                columns={columns}
+                dataSource={students}
+                rowKey="userName" // Changed to userName
+                pagination={{ pageSize: 8 }}
+                onRow={(record) => ({
+                  onClick: () => handleViewDetail(record.userName), // Pass userName
+                })}
+              />
+            </div>
+            <div className="w-1/3 bg-white p-6 rounded-lg shadow-md border">
+              {currentStudent ? (
+                <StudentDetail
+                  student={{
+                    userName: currentStudent.userName,
+                    email: currentStudent.email,
+                    className: currentStudent.className,
+                    gender: currentStudent.gender,
+                    avataUrl: currentStudent.avataUrl,
+                    phoneNumber: currentStudent.phoneNumber,
+                    firstName: currentStudent.firstName,
+                    lastName: currentStudent.lastName,
+                    fcmToken: currentStudent.fcmToken,
+                    status: currentStudent.status,
+                    dateOfBirth: currentStudent.dateOfBirth,
+                  }}
+                  onEdit={() => console.log('Sửa thông tin')}
+                  onDelete={() => {
+                    console.log('Đã xóa học sinh');
+                    setCurrentStudent(null);
+                  }}
+                />
+              ) : (
+                <div className="text-center text-gray-500">Chọn sinh viên để xem chi tiết</div>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
+    </>
+  );
 };
 
 export default StudentList;
+

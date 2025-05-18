@@ -8,6 +8,7 @@ import {
   SettingOutlined,
   FileDoneOutlined,
   StarOutlined,
+  BellOutlined
 } from '@ant-design/icons';
 import { Menu, Tag } from 'antd';
 import { useEffect} from 'react';
@@ -37,6 +38,7 @@ const Sidebar = () => {
     const path = location.pathname;
     if (path.includes('/dashboard/teachers')) return '/dashboard/teachers';
     if (path.includes('/dashboard/students')) return '/dashboard/students';
+    if (path.includes('/dashboard/notition')) return '/dashboard/notition';
     if (path.includes('/dashboard/billing')) return '/dashboard/billing';
     if (path.includes('/dashboard/settings')) return '/dashboard/settings';
     if (path.includes('/dashboard/exams')) return '/dashboard/exams';
@@ -49,7 +51,7 @@ const Sidebar = () => {
   };
 
   return (
-    <aside className="w-64 h-screen bg-[#0F1E46] text-white flex flex-col">
+    <aside className="w-64 h-screen bg-secondary-90 text-white flex flex-col">
       {/* Logo */}
       <div className="flex flex-col items-center py-6 border-b border-white/10">
         <img
@@ -68,8 +70,8 @@ const Sidebar = () => {
         theme="dark"
         selectedKeys={[selectedKey]}
         onClick={handleMenuClick}
-        className="flex-1 bg-[#0F1E46] pt-4"
-        style={{ borderInlineEnd: 'none' }}
+        className="flex-1 pt-4"
+        style={{backgroundColor: 'var(--color-secondary-90)', borderInlineEnd: 'none' }}
       >
         <Menu.Item key="/dashboard" icon={<AppstoreOutlined />}>
           Dashboard
@@ -81,6 +83,10 @@ const Sidebar = () => {
 
         <Menu.Item key="/dashboard/students" icon={<UserOutlined />}>
           Students/ classes
+        </Menu.Item>
+
+        <Menu.Item key="/dashboard/notition" icon={<BellOutlined />}>
+          Notification
         </Menu.Item>
 
         <Menu.Item key="/dashboard/billing" icon={<CreditCardOutlined />}>

@@ -1,67 +1,114 @@
 import React from 'react';
-import { Avatar, Button, Card, Tooltip, Popconfirm, message } from 'antd';
-import { MailOutlined, PhoneOutlined, MessageOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
+import {
+  Avatar,
+  Button,
+  Card,
+  Tooltip,
+  Popconfirm,
+  message,
+  Descriptions,
+  Tag,
+} from 'antd';
+import {
+  MailOutlined,
+  PhoneOutlined,
+  MessageOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  NotificationOutlined,
+} from '@ant-design/icons';
 
 interface StudentDetailProps {
-  id: string;
-  name: string;
-  email: string;
-  className: string;
-  gender: string;
-  age: number;
-  avatarUrl: string;
+  student: {
+    userName: string;
+    email: string | null;
+    avataUrl: string;
+    phoneNumber: string | null;
+    firstName: string;
+    lastName: string;
+    fcmToken: string;
+    status: string;
+    gender: number;
+    dateOfBirth?: string;
+    className: string | null;
+  };
   onEdit?: () => void;
   onDelete?: () => void;
 }
 
 const StudentDetail: React.FC<StudentDetailProps> = ({
-  id,
-  name,
-  email,
-  className,
-  gender,
-  age,
-  avatarUrl,
+  student,
   onEdit,
   onDelete,
 }) => {
+  const {
+    userName,
+    email,
+    avataUrl,
+    phoneNumber,
+    firstName,
+    lastName,
+    fcmToken,
+    status,
+    gender,
+    dateOfBirth,
+    className,
+  } = student;
+
+  const genderLabel = gender === 1 ? 'Nam' : gender === 2 ? 'Nữ' : 'Khác';
+
+  const handleSendNotification = () => {
+    console.log('Gửi thông báo đến người dùng có FCM token:', fcmToken);
+  };
+
+  const handleSendEmail = () => {
+    if (email) window.location.href = `mailto:${email}`;
+  };
+
+  const handleSendMessage = () => {
+    console.log('Chuyển đến giao diện nhắn tin với:', userName);
+  };
+
   return (
-    <Card className="">
-      <p className="text-center text-gray-500 text-sm">{id}</p>
+    <Card>
+      <div className="text-center text-gray-500 text-sm">Mã sinh viên: {userName}</div>
 
       <div className="flex justify-center mt-2">
-        <Avatar size={100} src={avatarUrl} />
+        <Avatar size={100} src={avataUrl || undefined} />
       </div>
 
-      <h2 className="text-center text-lg font-semibold mt-4">{name}: {email}</h2>
-      <p className="text-center text-sm text-gray-500 mb-4">{className} student</p>
+      <h2 className="text-center text-lg font-semibold mt-4">{`${lastName} ${firstName}`}</h2>
 
-      {/* Action buttons */}
+      <div className="text-center mb-4">
+        <Tag color={status === 'Active' ? 'green' : 'red'}>{status}</Tag>
+      </div>
+
       <div className="flex justify-center gap-4 text-gray-600 mb-4">
-        <Tooltip title="Email">
-          <Button shape="circle" icon={<MailOutlined />} />
+        <Tooltip title="Gửi thông báo">
+          <Button shape="circle" icon={<NotificationOutlined />} onClick={handleSendNotification} />
         </Tooltip>
-        <Tooltip title="Call">
-          <Button shape="circle" icon={<PhoneOutlined />} />
+        <Tooltip title="Gửi email">
+          <Button shape="circle" icon={<MailOutlined />} onClick={handleSendEmail} />
         </Tooltip>
-        <Tooltip title="Message">
-          <Button shape="circle" icon={<MessageOutlined />} />
+        <Tooltip title="Nhắn tin">
+          <Button shape="circle" icon={<MessageOutlined />} onClick={handleSendMessage} />
         </Tooltip>
       </div>
 
-      {/* About */}
-      <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-1">About</h3>
-        <p className="text-gray-500 text-sm italic">—</p>
-      </div>
+      <Descriptions column={1} size="small" bordered>
+        <Descriptions.Item label="Họ và tên">
+          {`${lastName} ${firstName}`}
+        </Descriptions.Item>
+        <Descriptions.Item label="Email">{email || '—'}</Descriptions.Item>
+        <Descriptions.Item label="Số điện thoại">{phoneNumber || '—'}</Descriptions.Item>
+        <Descriptions.Item label="Giới tính">{genderLabel}</Descriptions.Item>
+        <Descriptions.Item label="Ngày sinh">
+          {dateOfBirth ? new Date(dateOfBirth).toLocaleDateString('vi-VN') : '—'}
+        </Descriptions.Item>
+        <Descriptions.Item label="Lớp">{className || '—'}</Descriptions.Item>
+        <Descriptions.Item label="FCM Token">{fcmToken ? fcmToken.substring(0, 20) + '...' : '—'}</Descriptions.Item>
+      </Descriptions>
 
-      {/* Age & Gender */}
-      <div className="flex justify-between text-sm text-gray-700 mb-4">
-        <div><span className="font-semibold">Age: </span>{age}</div>
-        <div><span className="font-semibold">Gender: </span>{gender}</div>
-      </div>
-
-      {/* Buttons */}
       <div className="flex justify-center gap-4 mt-6">
         <Button icon={<EditOutlined />} onClick={onEdit}>
           Sửa thông tin

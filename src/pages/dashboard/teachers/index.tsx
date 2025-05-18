@@ -1,14 +1,21 @@
 // teacher/index.tsx
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Layout } from 'antd';
 import TeacherList from './TeacherList';
 import TeacherDetail from './TeacherDetail';
 import TeacherFilter from '../../../components/TeacherFilter';
+//import { teachers as fakeTeachers } from '../../../assets/fake_data/teachers';
 
 const { Content } = Layout;
 
 const TeacherLayout: React.FC = () => {
+
+  // useEffect(() => {
+  //   dispatch(setTeachers(teachers));
+  //   dispatch(setFilteredTeachers(teachers)); // Khởi tạo filteredTeachers bằng allTeachers
+  // }, [dispatch]);
+
   return (
     <Content
       className="site-layout-background"
@@ -18,7 +25,7 @@ const TeacherLayout: React.FC = () => {
         minHeight: 280,
       }}
     >
-      <TeacherFilter /> 
+      <TeacherFilter />
       <Outlet />
     </Content>
   );

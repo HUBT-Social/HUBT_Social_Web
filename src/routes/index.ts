@@ -1,5 +1,5 @@
 import React from 'react';
-import { useRoutes, RouteObject} from 'react-router-dom';
+import { useRoutes, RouteObject, Navigate } from 'react-router-dom';
 import HomePage from '../pages/home/HomePage';
 import LoginPage from '../pages/auth/LoginPage';
 import SignUpPage from '../pages/auth/SignUpPage';
@@ -7,102 +7,82 @@ import NotFoundPage from '../pages/404/NotFoundPage';
 import DashboadPage from '../pages/dashboard/DashboadPage';
 import SettingsPage from '../pages/dashboard/SettingsPage';
 import Layout from '../components/Layout';
-import ColorTestPage from '../components/ColorTest'
+import ColorTestPage from '../components/ColorTest';
 import {
   TeacherLayout,
   TeacherIndex,
   TeacherDetailPage
 } from '../pages/dashboard/teachers/index';
-import {userFromStorage} from '../helper/tokenHelper';
 import StudentsLayout from '../pages/dashboard/students';
 import StudentList from '../pages/dashboard/students/StudentList';
+import { userFromStorage } from '../helper/tokenHelper';
 import { extractTokenInfo } from '../helper/extratoken';
+import NotificationSelector from '../pages/dashboard/notification/NotificationSelecter';
+import ExamManagement from '../pages/dashboard/exams';
+import SettingAndProfile from '../pages/dashboard/settings';
+import BillLayout from '../pages/dashboard/billing';
+import TeaturesLayout from '../pages/dashboard/features';
 
+// Hàm kiểm tra token còn hạn hay không
+const availableToken = (): boolean => {
+  const userToken = extractTokenInfo();
+  return userToken !== null && !userToken.isExpired;
+};
 
 // Component bảo vệ route
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  return userFromStorage !== null ? (
-    availableToken() === true ?
-    (children) : React.createElement(LoginPage)
-  ) : (
-    React.createElement(LoginPage)
-  );
+  // if (!userFromStorage || !availableToken()) {
+  //   return React.createElement(Navigate, { to: '/login', replace: true });
+  // }
+  return React.createElement(React.Fragment, null, children);
 };
-const availableToken = (): boolean =>{
-  const userToken = extractTokenInfo();
-    if (!userToken || userToken.isExpired){
-      return false;
-    }
-    return true;
-}
 
-
-// Định nghĩa các public routes
+// Các route không yêu cầu đăng nhập
 const publicRoutes: RouteObject[] = [
   { path: '/', element: React.createElement(HomePage) },
   { path: '/login', element: React.createElement(LoginPage) },
   { path: '/signup', element: React.createElement(SignUpPage) },
   { path: '/clm', element: React.createElement(ColorTestPage) },
-  { path: '*', element: React.createElement(NotFoundPage) }
+  { path: '*', element: React.createElement(NotFoundPage) },
 ];
 
-// Định nghĩa các private routes (yêu cầu layout và xác thực)
+// Các route yêu cầu đăng nhập
 const privateRoutes: RouteObject[] = [
   {
     path: '/dashboard',
-    element: React.createElement(PrivateRoute, { children: React.createElement(Layout) }), // Bọc Layout bằng PrivateRoute
+    element: React.createElement(
+      PrivateRoute,
+      {children: React.createElement(Layout)}
+    ),
     children: [
       { index: true, element: React.createElement(DashboadPage) },
       {
         path: 'teachers',
-        element: React.createElement(PrivateRoute, { children: React.createElement(TeacherLayout) }), // Bọc TeacherLayout bằng PrivateRoute
+        element: React.createElement(TeacherLayout),
         children: [
           { index: true, element: React.createElement(TeacherIndex) },
           { path: ':id', element: React.createElement(TeacherDetailPage) },
-          { path: '*', element: React.createElement(NotFoundPage) }
+          { path: '*', element: React.createElement(NotFoundPage) },
         ],
       },
       {
         path: 'students',
-        element: React.createElement(PrivateRoute, { children: React.createElement(StudentsLayout) }), 
+        element: React.createElement(StudentsLayout),
         children: [
           { index: true, element: React.createElement(StudentList) },
-          { path: '*', element: React.createElement(NotFoundPage) }
+          { path: '*', element: React.createElement(NotFoundPage) },
         ],
       },
-      // {
-      //   path: 'notition', 
-      //   element: ,
-      //   children:[
-      //     {index: true, element: },
-      //     {path: '*',element: React.createElement(NotFoundPage)}
-      //   ]
-      // },
-      // {
-      //   path: 'notition', 
-      //   element: ,
-      //   children:[
-      //     {index: true, element: },
-      //     {path: '*',element: React.createElement(NotFoundPage)}
-      //   ]
-      // },
-      // {
-      //   path: 'notition', 
-      //   element: ,
-      //   children:[
-      //     {index: true, element: },
-      //     {path: '*',element: React.createElement(NotFoundPage)}
-      //   ]
-      // },
-      { path: 'settings', element: React.createElement(PrivateRoute, { children: React.createElement(SettingsPage) }) },
-      { path: 'billing', element: React.createElement(PrivateRoute, { children: React.createElement(SettingsPage) }) },
-      { path: 'exams', element: React.createElement(PrivateRoute, { children: React.createElement(SettingsPage) }) },
-      { path: 'settings', element: React.createElement(PrivateRoute, { children: React.createElement(SettingsPage) }) },
-      { path: 'features', element: React.createElement(PrivateRoute, { children: React.createElement(SettingsPage) }) },
+      { path: 'notition', element: React.createElement(NotificationSelector) },
+      { path: 'settings', element: React.createElement(SettingAndProfile) },
+      { path: 'billing', element: React.createElement(BillLayout) },
+      { path: 'exams', element: React.createElement(ExamManagement) },
+      { path: 'features', element: React.createElement(TeaturesLayout) },
     ],
   },
 ];
 
+// Combine các route
 const AppRoutes: React.FC = () => {
   const routes = useRoutes([...publicRoutes, ...privateRoutes]);
   return routes;

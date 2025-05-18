@@ -1,14 +1,15 @@
 // Định nghĩa interface cho Teacher
 export interface Teacher {
-    id: string;
-    name: string;
-    avatarUrl: string;
-    email: string;
-    phone: string;
-    gender: string;
-    roles: string[];
-    subjects: string[];
-    description: string;
-    age: number;
-  }
+  id: string;
+  userName: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string;
+  email: string;
+  phoneNumber: string;
+  gender: number;
+  dateOfBirth: string;
   
+  age: number;
+  status: 'active' | 'inactive' | string;
+}

@@ -12,9 +12,6 @@ const StudentAdd: React.FC = () => {
     }
     return (
         <>
-            <Button type="default" onClick={handleImportCSV}  className="mb-4 bg-gray-100 hover:bg-gray-100 text-white border-none">
-                Import CSV
-            </Button>
             <Button type="primary" onClick={handleAdd}  className="mb-4 bg-primary-500 hover:bg-primary-600 text-white border-none">
                 Thêm sinh viên
             </Button>

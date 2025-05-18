@@ -14,15 +14,16 @@ export interface UserToken {
 
 
   export interface UserInfo {
-    id?: string; // Guid từ C# sẽ map sang string
+    id: string; 
     userName: string;
-    email: string;
+    email: string | null;
     avataUrl: string;
-    phoneNumber?: string;
-    firstName?: string;
-    lastName?: string;
-    fcmToken?: string;
-    status?: string;
-    //gender: 'Male' | 'Female' | 'Other'; // Enum Gender bên C# cần map lại
+    phoneNumber: string | null;
+    firstName: string;
+    lastName: string;
+    fcmToken: string;
+    status: string;
+    gender: number; // Enum Gender bên C# cần map lại
     dateOfBirth?: string; // DateTime nên để dạng string ISO (yyyy-mm-dd)
+    className: string | null;
   }
