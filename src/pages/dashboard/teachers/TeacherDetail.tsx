@@ -8,16 +8,15 @@ import {
   Form,
   Input,
   Select,
-  Tabs,
   message,
   DatePicker,
   Tooltip,
   Upload,
+  Spin,
 } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   UserOutlined,
-  PhoneOutlined,
   MailOutlined,
   NotificationOutlined,
   MessageOutlined,
@@ -36,6 +35,25 @@ import { updatePasswordAsync, UpdatePasswordRequest } from '../../../services/us
 const { Option } = Select;
 const { TextArea } = Input;
 
+// 👇 Giả lập API tạo phòng
+const createChatRoomAPIAsync = async () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve({ data: { roomId: '12345' } });
+    }, 1000);
+  });
+};
+
+// 👇 Giả lập kết nối Hub SignalR
+const connectToChatHubAsync = async (roomId: string) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      console.log('Connected to Hub with Room:', roomId);
+      resolve(true);
+    }, 1000);
+  });
+};
+
 const TeacherDetail: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -48,7 +66,10 @@ const TeacherDetail: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [isNotificationOpen, setNotificationOpen] = useState(false);
   const [isEmailOpen, setEmailOpen] = useState(false);
-  const [isMessageOpen, setMessageOpen] = useState(false);
+  const [imageData, setImageData] = useState<{ base64String: string; fileName: string } | null>(null);
+  const [chatPopup_isVisible, setChatPopup_isVisible] = useState(false);
+  const [chatPopup_isReadyToChat, setChatPopup_isReadyToChat] = useState(false);
+  const [chatPopup_isConnecting, setChatPopup_isConnecting] = useState(false);
 
   const showEditModal = () => {
     if (!teacher) return;
@@ -132,6 +153,38 @@ const TeacherDetail: React.FC = () => {
       message.error("Cập nhật mật khẩu thất bại!");
     }
   };
+  const handleBeforeUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      setImageData({
+        base64String: reader.result as string,
+        fileName: file.name,
+      });
+    };
+    reader.onerror = () => {
+      message.error('Không thể đọc file ảnh!');
+    };
+    reader.readAsDataURL(file);
+    return false; // ngăn không cho Upload tự upload file
+  };
+  // Xử lý khi nhấn nút mở khung chat
+  const handleChatPopup_OpenAsync = async () => {
+    setChatPopup_isVisible(true);
+    setChatPopup_isConnecting(true);
+
+    try {
+      const chatRoom_response = await createChatRoomAPIAsync();
+      const chatRoom_id = (chatRoom_response as any).data.roomId;
+
+      await connectToChatHubAsync(chatRoom_id);
+
+      setChatPopup_isReadyToChat(true);
+    } catch (err) {
+      console.error('❌ Lỗi khi mở chat:', err);
+    } finally {
+      setChatPopup_isConnecting(false);
+    }
+  };
 
   if (!teacher) {
     return (
@@ -191,7 +244,7 @@ const TeacherDetail: React.FC = () => {
                 <Button
                   shape="circle"
                   icon={<MessageOutlined />}
-                  onClick={() => setMessageOpen(true)}
+                  onClick={() => handleChatPopup_OpenAsync()}
                 />
               </Tooltip>
             </div>
@@ -206,15 +259,28 @@ const TeacherDetail: React.FC = () => {
                 setNotificationOpen(false);
               }}
             >
-              <Form layout="vertical">
-                <Form.Item label="Tiêu đề">
+              <Form form={form} layout="vertical">
+                <Form.Item
+                  label="Tiêu đề"
+                  name="title"
+                  rules={[{ required: true, message: 'Vui lòng nhập tiêu đề!' }]}
+                >
                   <Input placeholder="Nhập tiêu đề..." />
                 </Form.Item>
-                <Form.Item label="Nội dung">
+                <Form.Item
+                  label="Nội dung"
+                  name="body"
+                  rules={[{ required: true, message: 'Vui lòng nhập nội dung!' }]}
+                >
                   <TextArea rows={4} placeholder="Nhập nội dung..." />
                 </Form.Item>
                 <Form.Item label="Hình ảnh (nếu có)">
-                  <Upload>
+                  <Upload
+                    beforeUpload={handleBeforeUpload}
+                    maxCount={1}
+                    showUploadList={{ showRemoveIcon: true }}
+                    onRemove={() => setImageData(null)}
+                  >
                     <Button icon={<UploadOutlined />}>Chọn ảnh</Button>
                   </Upload>
                 </Form.Item>
@@ -245,33 +311,44 @@ const TeacherDetail: React.FC = () => {
             </Modal>
 
              {/* Bong bóng chat cố định */}
-      {isMessageOpen && (
-        <div
-          className="fixed bottom-5 right-5 w-80 bg-white rounded-xl shadow-lg border p-3 z-50"
-        >
-          <div className="flex justify-between items-center mb-2">
-            <span className="font-semibold text-blue-600">Chat</span>
-            <Button
-              type="text"
-              size="small"
-              icon={<CloseOutlined />}
-              onClick={() => setMessageOpen(false)}
-            />
-          </div>
-          <div className="h-40 overflow-y-auto border rounded p-2 mb-2 bg-gray-50">
-            <div className="text-sm text-gray-600">Bạn: Xin chào!</div>
-            <div className="text-sm text-blue-600 text-right">Hệ thống: Chào bạn!</div>
-          </div>
-          <Input.Search
-            placeholder="Nhập tin nhắn..."
-            enterButton="Gửi"
-            onSearch={(value) => {
-              // TODO: Gửi tin nhắn
-              console.log("Send:", value);
-            }}
-          />
-        </div>
-      )}
+              {chatPopup_isVisible && (
+                <div className="fixed bottom-5 right-5 w-80 bg-white rounded-xl shadow-lg border p-4 z-50">
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="font-semibold text-blue-600 text-lg">💬 Trò chuyện</span>
+                    <Button
+                      type="text"
+                      size="small"
+                      icon={<CloseOutlined />}
+                      onClick={() => setChatPopup_isVisible(false)}
+                    />
+                  </div>
+
+                  {chatPopup_isConnecting && (
+                    <div className="text-center py-8 text-gray-500">
+                      <Spin tip="Đang kết nối phòng chat..." />
+                    </div>
+                  )}
+
+                  {!chatPopup_isConnecting && chatPopup_isReadyToChat && (
+                    <>
+                      <div className="h-48 overflow-y-auto space-y-2 mb-3 px-1 bg-gray-50 border rounded p-2">
+                        <div className="text-sm text-gray-600">Bạn: Xin chào!</div>
+                        <div className="text-sm text-blue-600 text-right">Hệ thống: Chào bạn!</div>
+                      </div>
+
+                      <Input.Search
+                        placeholder="Nhập tin nhắn..."
+                        enterButton="Gửi"
+                        onSearch={(chatMessage_value) => {
+                          // TODO: gửi chatMessage_value qua hub
+                          console.log('📩 Gửi tin nhắn:', chatMessage_value);
+                        }}
+                      />
+                    </>
+                  )}
+                </div>
+              )}
+
           </div>
 
           <div className="flex-1">

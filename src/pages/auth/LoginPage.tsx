@@ -1,167 +1,85 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { Form, Input, Button, Typography, Alert, Spin } from 'antd';
-import { UserOutlined, LockOutlined } from '@ant-design/icons';
+import { Form, Input, Button, Typography, Alert, Space, Spin } from 'antd';
+import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode'; // Sử dụng thư viện jwt-decode
+import { jwtDecode } from 'jwt-decode';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   loginRequest,
   selectAuthLoading,
   selectAuthError,
   clearError,
 } from '../../store/slices/authSlice';
+import { selectSettings } from '../../store/slices/settingSlice';
 import type { AppDispatch } from '../../store/store';
-import { getTeachers } from '../../store/slices/teacherSlice';
-import { getStudents } from '../../store/slices/studentSlice';
+import { storageService } from '../../helper/tokenHelper';
 
 interface LoginFormValues {
   username: string;
   password: string;
 }
 
-// Wrapper service cho localStorage
-const storageService = {
-  getItem: (key: string) => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem(key);
-    }
-    return null;
-  },
-  setItem: (key: string, value: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem(key, value);
-    }
-  },
-  removeItem: (key: string) => {
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem(key);
-    }
-  },
-};
+interface DecodedToken {
+  exp: number;
+}
 
 const LoginPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const loading = useSelector(selectAuthLoading);
   const error = useSelector(selectAuthError);
+  const settings = useSelector(selectSettings);
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(true);
+  const [showContactForm, setShowContactForm] = useState(false);
 
-  // Hàm kiểm tra tính hợp lệ của token (sử dụng thư viện)
-  const isTokenValid = useCallback((token: string): boolean => {
+  const isTokenValid = (token: string): boolean => {
     try {
-      const decoded: any = jwtDecode(token);
-      const expiryDate = decoded.exp * 1000;
-      console.log("Token hop le?: ",new Date().getTime() < expiryDate);
-      return new Date().getTime() < expiryDate;
-    } catch (error) {
-      console.error('Token validation error:', error);
-      return false; // Token không hợp lệ nếu có lỗi giải mã
+      const decoded: DecodedToken = jwtDecode(token);
+      return Date.now() < decoded.exp * 1000;
+    } catch {
+      return false;
     }
-  }, []);
+  };
 
-  // Fetch initial data
-  const fetchData = useCallback(async () => {
-    const persistedRoot = storageService.getItem('persist:root');
-    let hasStudents: boolean = false;
-    let hasTeachers: boolean = false;
-
-    if (persistedRoot) {
-        try {
-            const persistedData = JSON.parse(persistedRoot);
-            // Check for the existence of student and teacher data
-            hasStudents = persistedData.students && persistedData.students.students && persistedData.students.students.length > 0;
-            hasTeachers = persistedData.teachers && persistedData.teachers.teachers && persistedData.teachers.teachers.length > 0;
-
-        } catch (error) {
-            console.error("Error parsing persisted data:", error);
-            // Handle the error appropriately, e.g., set an error state
-        }
-    }
-    console.log('Fuck youyou: ', persistedRoot);
-    console.log('hasStudents:', hasStudents , 'hasTeachers:',hasTeachers);
-
-    try {
-        if (hasStudents || hasTeachers) {
-            const fetchStudentsData = async () => {
-                let currentStudentPage = 0;
-                let studentHasMore = true;
-                while (studentHasMore) {
-                    const res = await dispatch(getStudents(currentStudentPage) as any).unwrap();
-                    studentHasMore = res?.hasMore;
-                    currentStudentPage += 1;
-                }
-            };
-
-            const fetchTeachersData = async () => {
-                let currentTeacherPage = 0;
-                let teacherHasMore = true;
-                while (teacherHasMore) {
-                    const res = await dispatch(getTeachers(currentTeacherPage) as any).unwrap();
-                    teacherHasMore = res?.hasMore;
-                    currentTeacherPage += 1;
-                }
-            };
-            await Promise.all([fetchStudentsData(), fetchTeachersData()]);
-        }
-    } catch (error) {
-        console.error("Error fetching initial data", error);
-    } finally {
-        setIsLoading(false);
-    }
-}, [dispatch]);
-
-
-  // Kiểm tra token và chuyển hướng
   useEffect(() => {
     const checkAuth = async () => {
-      setIsLoading(true); // Set loading at the beginning
-
       try {
-          const authUserString = storageService.getItem('persist:authUser');
-          console.log("authUserString:", authUserString); // Log authUserString
-          const authUser = authUserString ? JSON.parse(authUserString) : null;
-          console.log("authUser:", authUser); // Log authUser
+        const authUserString = storageService.getItem('persist:authUser');
+        if (!authUserString) throw new Error('No auth data');
 
-          if (authUser?.token) {
-              // No need to parse authUser.token again, it's already an object
-              const { accessToken } = JSON.parse(authUser.token);
-              
-              console.log("accessToken:", accessToken); // Log accessToken
+        const authUser = JSON.parse(authUserString);
+        const tokenObj = authUser?.token ? JSON.parse(authUser.token) : null;
+        const accessToken = tokenObj?.accessToken;
 
-              if (accessToken !== null && isTokenValid(accessToken)) {
-                console.log("sdnvsdnvkdfnknsvsodmcsdcnsdjAaaaaaaaaaaaaaaaaaaaaaaaaa");
-                  navigate('/dashboard');
-                  fetchData();
-                  return; // Important: Exit the function after successful navigation
-              }
-          }
-          setIsLoading(false); // Set loading to false if not authenticated
-      } catch (error) {
-          console.error("Error checking authentication:", error);
-          setIsLoading(false); // Set loading to false on error
-      }
-  };
-    checkAuth();
-  }, [navigate, isTokenValid, fetchData]);
-
-  const handleLogin = useCallback(
-    async (values: LoginFormValues) => {
-      dispatch(clearError()); // Clear error before dispatching loginRequest
-      try {
-        if(await dispatch(loginRequest(values)).unwrap()){
+        if (accessToken && isTokenValid(accessToken)) {
           navigate('/dashboard');
-          //fetchData();
-          return;
+        } else {
+          throw new Error('Invalid or expired token');
         }
-      } catch (err: any) { // Type err as any
-        console.error('Login failed:', err);
-        // Error is handled by the slice, no need to set error state here
+      } catch {
+        storageService.clear();
+        dispatch(clearError());
+      } finally {
+        setIsLoading(false);
       }
-    },
-    [dispatch, navigate]
-  );
+    };
+    checkAuth();
+  }, [navigate, dispatch]);
 
-  // Tự động xóa thông báo lỗi sau 3 giây
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', settings.darkMode);
+  }, [settings.darkMode]);
+
+  const handleLogin = async (values: LoginFormValues) => {
+    try {
+      await dispatch(loginRequest(values)).unwrap();
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Login failed:', error);
+    }
+  };
+
   useEffect(() => {
     if (error) {
       const timer = setTimeout(() => dispatch(clearError()), 3000);
@@ -169,86 +87,216 @@ const LoginPage: React.FC = () => {
     }
   }, [error, dispatch]);
 
-  // Nếu đang loading, hiển thị loading screen
+  // Animation variants
+  const formVariants = {
+    hidden: (direction: number) => ({
+      opacity: 0,
+      x: direction > 0 ? 300 : -300,
+    }),
+    visible: { opacity: 1, x: 0, transition: { duration: 0.5, ease: 'easeInOut' } },
+    exit: (direction: number) => ({
+      opacity: 0,
+      x: direction > 0 ? -300 : 300,
+      transition: { duration: 0.5, ease: 'easeInOut' },
+    }),
+  };
+
+  const alertVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
+    exit: { opacity: 0, x: 20, transition: { duration: 0.2 } },
+  };
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-100">
-        <Spin size="large" />
+      <div className="flex items-center justify-center min-h-screen bg-[var(--background)]">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ repeat: Infinity, duration: 1.5 }}
+        >
+          <Spin size="large" className="text-[var(--primary)]" />
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary-90 px-4">
-      <div className="w-full max-w-md bg-secondary-10 p-8 rounded-xl shadow-md">
-        <Typography.Title level={3} className="text-center mb-2 !text-gray-800">
-          Welcome, Log into your <span className="text-blue-600">account</span>
-        </Typography.Title>
-
-        <Typography.Paragraph className="text-center text-gray-600 mb-6 text-sm">
-          It is our great pleasure to have you on board!
-        </Typography.Paragraph>
-
-        <Form
-          name="login_form"
-          onFinish={handleLogin}
-          layout="vertical"
-          disabled={loading}
-          className="max-w-[400px] mx-auto"
-        >
-          <Form.Item
-            name="username"
-            rules={[{ required: true, message: 'Please enter your school name!' }]}
-            label="User Name"
-          >
-            <Input
-              prefix={<UserOutlined className="text-gray-400" />}
-              placeholder="Enter the name of school"
-              className="py-2"
-            />
-          </Form.Item>
-
-          <Form.Item
-            name="password"
-            rules={[{ required: true, message: 'Please enter your Password!' }]}
-            label="Password"
-          >
-            <Input.Password
-              prefix={<LockOutlined className="text-gray-400" />}
-              placeholder="Enter Password"
-              className="py-2"
-            />
-          </Form.Item>
-
-          {error && (
-            <Alert
-              message="Login Error"
-              description={typeof error === 'string' ? error : 'Login failed'}
-              type="error"
-              showIcon
-              className="mb-4"
-            />
-          )}
-
-          <Form.Item className="mb-0">
-            <Button
-              type="primary"
-              htmlType="submit"
-              loading={loading}
-              block
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md"
+    <div className="flex items-center justify-center min-h-screen px-4 bg-[var(--background)]">
+      <div className="w-full max-w-md p-8 rounded-2xl shadow-2xl bg-[var(--card-bg)]/80 backdrop-blur-lg border border-[var(--color-neutral-20)]/20">
+        <AnimatePresence mode="wait" custom={showContactForm ? 1 : -1}>
+          {!showContactForm ? (
+            <motion.div
+              key="login"
+              custom={-1}
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              Login
-            </Button>
-          </Form.Item>
-        </Form>
+              <Typography.Title
+                level={3}
+                className="text-center mb-2 font-bold text-[var(--text-color)]"
+              >
+                Đăng nhập vào <span className="text-[var(--primary)]">Tài khoản</span>
+              </Typography.Title>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Don’t have an account?{' '}
-          <a href="/signup" className="text-blue-600 hover:underline font-medium">
-            Sign up
-          </a>
-        </p>
+              <Typography.Paragraph className="text-center text-[var(--color-neutral-20)] mb-6 text-sm">
+                Chào mừng bạn đến với hệ thống!
+              </Typography.Paragraph>
+
+              <AnimatePresence>
+                {error && (
+                  <motion.div
+                    variants={alertVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="exit"
+                  >
+                    <Alert
+                      message="Lỗi đăng nhập"
+                      description={error}
+                      type="error"
+                      showIcon
+                      className="mb-4 animate-shake border-[var(--color-error-50)]"
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              <Form
+                name="login_form"
+                onFinish={handleLogin}
+                layout="vertical"
+                disabled={loading}
+                initialValues={{
+                  username: import.meta.env.DEV ? 'DangAdmin' : '',
+                  password: import.meta.env.DEV ? 'Khongnho123@' : '',
+                }}
+              >
+                <motion.div
+                  variants={formVariants}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0, transition: { delay: 0.2 } }}
+                >
+                  <Form.Item
+                    name="username"
+                    rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập!' }]}
+                    label={<span className="text-[var(--text-color)]">Tên đăng nhập</span>}
+                  >
+                    <Input
+                      prefix={<UserOutlined className="text-[var(--color-neutral-30)]" />}
+                      placeholder="Nhập tên đăng nhập"
+                      className="py-2 rounded-lg bg-[var(--color-surface-10)]/30 border-[var(--color-neutral-20)]/50 hover:border-[var(--primary)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
+                    />
+                  </Form.Item>
+                </motion.div>
+
+                <motion.div
+                  variants={formVariants}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0, transition: { delay: 0.3 } }}
+                >
+                  <Form.Item
+                    name="password"
+                    rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+                    label={<span className="text-[var(--text-color)]">Mật khẩu</span>}
+                  >
+                    <Input.Password
+                      prefix={<LockOutlined className="text-[var(--color-neutral-30)]" />}
+                      placeholder="Nhập mật khẩu"
+                      className="py-2 rounded-lg bg-[var(--color-surface-10)]/30 border-[var(--color-neutral-20)]/50 hover:border-[var(--primary)] focus:border-[var(--primary)] focus:ring-2 focus:ring-[var(--primary)]/50 transition-all"
+                    />
+                  </Form.Item>
+                </motion.div>
+
+                <Form.Item>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={loading}
+                    block
+                    className="py-2 rounded-lg text-[var(--color-on-primary)] font-semibold transition-all duration-300 transform hover:scale-105 hover:shadow-lg"
+                  >
+                    {loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+                  </Button>
+                </Form.Item>
+              </Form>
+
+              <p className="text-center text-sm text-[var(--color-neutral-20)] mt-4">
+                Chưa có tài khoản?{' '}
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowContactForm(true);
+                  }}
+                  className="text-[var(--primary)] hover:underline font-medium"
+                >
+                  Đăng ký
+                </a>
+              </p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="contact"
+              custom={1}
+              variants={formVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <Typography.Title
+                level={3}
+                className="text-center mb-2 font-bold text-[var(--text-color)]"
+              >
+                Liên hệ <span className="text-[var(--primary)]">Quản trị viên</span>
+              </Typography.Title>
+
+              <Typography.Paragraph className="text-center text-[var(--color-neutral-20)] mb-6 text-sm">
+                Vui lòng liên hệ quản trị viên để được cấp tài khoản.
+              </Typography.Paragraph>
+
+              <div className="flex flex-col items-center gap-4">
+                <Space direction="vertical" align="center" size="middle">
+                  <MailOutlined className="text-4xl text-[var(--primary)]" />
+                  <div className="text-center">
+                    <Typography.Text strong className="text-[var(--text-color)]">
+                      Email hỗ trợ:
+                    </Typography.Text>
+                    <Typography.Text className="text-[var(--color-neutral-20)] block">
+                      admin@school.edu.vn
+                    </Typography.Text>
+                  </div>
+                  <div className="text-center">
+                    <Typography.Text strong className="text-[var(--text-color)]">
+                      Hotline:
+                    </Typography.Text>
+                    <Typography.Text className="text-[var(--color-neutral-20)] block">
+                      +84 123 456 789
+                    </Typography.Text>
+                  </div>
+                  <Typography.Text className="text-[var(--color-neutral-20)]">
+                    Vui lòng cung cấp thông tin cá nhân để được hỗ trợ tạo tài khoản.
+                  </Typography.Text>
+                </Space>
+              </div>
+
+              <p className="text-center text-sm text-[var(--color-neutral-20)] mt-6">
+                Đã có tài khoản?{' '}
+                <a
+                  href="#"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowContactForm(false);
+                  }}
+                  className="text-[var(--primary)] hover:underline font-medium"
+                >
+                  Quay lại đăng nhập
+                </a>
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

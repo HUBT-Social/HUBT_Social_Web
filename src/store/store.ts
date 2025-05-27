@@ -10,7 +10,7 @@ import {
   REGISTER,
 } from 'redux-persist';
 import { Action, combineReducers } from 'redux';
-import storage from 'redux-persist/lib/storage'; // Chọn localStorage cho web
+import storage from 'redux-persist/lib/storage';
 import authUserReducer from './slices/authSlice';
 import teacherReducer from './slices/teacherSlice';
 import studentReducer from './slices/studentSlice';
@@ -18,46 +18,53 @@ import notificationReducer from './slices/notificationSlice';
 import examReducer from './slices/examSlice';
 import settingReducer from './slices/settingSlice';
 
-// Kết hợp các reducer
 const rootReducer = combineReducers({
   authUser: authUserReducer,
   teachers: teacherReducer,
   students: studentReducer,
   notification: notificationReducer,
   exams: examReducer,
-  settings: settingReducer
-  // Thêm các reducer khác nếu bạn có
+  settings: settingReducer,
 });
 
-// Cấu hình Redux Persist
 const persistConfig = {
-  key: 'root', // Key cho toàn bộ store
-  storage: storage, // Chọn storage engine (localStorage cho web)
-  version: 1, // Phiên bản của schema persisted. Tăng lên nếu bạn thay đổi cấu trúc.
-  // Các reducer đã được cấu hình persist trong các file slice riêng biệt.
-  middleware: (getDefaultMiddleware: (arg0: { serializableCheck: { ignoredActions: ("persist/FLUSH" | "persist/REHYDRATE" | "persist/PAUSE" | "persist/PERSIST" | "persist/PURGE" | "persist/REGISTER")[]; }; }) => any) =>
-    getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER], // Bỏ qua các action không tuần tự
-      },
-    }),
+  key: 'root',
+  storage,
+  version: 1,
+  whitelist: [ 'authUser'], //'students', 'teachers',
+  transforms: [
+    {
+      in: (state: any) => state,
+      out: (state: any) => ({
+        ...state,
+        _persistTimestamp: Date.now(),
+      }),
+    },
+  ],
 };
 
-// Tạo persistedReducer
+const ttlMiddleware = () => (next: any) => (action: any) => {
+  if (action.type === REHYDRATE && action.payload) {
+    const { _persistTimestamp } = action.payload;
+    if (_persistTimestamp && Date.now() - _persistTimestamp > 3600000) {
+      return next({ type: PURGE, key: persistConfig.key, result: () => null });
+    }
+  }
+  return next(action);
+};
+
 const persistedReducer = persistReducer(persistConfig, rootReducer);
 
-// Cấu hình store
 const store = configureStore({
-  reducer: persistedReducer, // Sử dụng persistedReducer thay vì rootReducer
+  reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER], // Bỏ qua các action không tuần tự
+        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
       },
-    }),
+    }).concat(ttlMiddleware),
 });
 
-// Tạo persistor để theo dõi state đã persisted
 const persistor = persistStore(store);
 
 export type AppDispatch = typeof store.dispatch;
@@ -69,5 +76,4 @@ export type AppThunk<ReturnType = void> = ThunkAction<
   Action<string>
 >;
 
-// Export cả store và persistor
 export { store, persistor };

@@ -31,9 +31,9 @@ const availableToken = (): boolean => {
 
 // Component bảo vệ route
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // if (!userFromStorage || !availableToken()) {
-  //   return React.createElement(Navigate, { to: '/login', replace: true });
-  // }
+  if (!userFromStorage || !availableToken()) {
+    return React.createElement(Navigate, { to: '/login', replace: true });
+  }
   return React.createElement(React.Fragment, null, children);
 };
 

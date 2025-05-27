@@ -48,3 +48,9 @@ export const CHAT_ENDPOINTS = {
     POST_ROOM_KICK_MEMBER: '/api/chat/room/kick-member',
     POST_ROOM_LEAVE_ROOM: '/api/chat/room/leave-room'
 } as const;
+
+export const NOTIFICATION_ENDPOINT = {
+    POST_SENT_TO_ONE: '/api/notation/send-to-one',
+    POST_SENT_TO_MANY: '/api/notation/send-to-many',
+    POST_SENT_BY_CONDITION: '/api/notation/send-by-condition'
+} as const;

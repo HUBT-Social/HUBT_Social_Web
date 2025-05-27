@@ -1,218 +1,201 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   Card,
   Avatar,
-  Button,
-  Modal,
-  Form,
-  Input,
-  DatePicker,
-  Select,
   message,
   Switch,
-  Divider,
   Typography,
+  Button,
+  Tooltip,
 } from 'antd';
-import { EditOutlined, UserOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
+import { UserOutlined, EditOutlined,} from '@ant-design/icons';
 import { useDispatch, useSelector } from 'react-redux';
-import { updateTheme, selectSettings, Settings } from '../../../store/slices/settingSlice';
-import { UserInfo } from '../../../types/User';
+import { motion } from 'framer-motion';
+import {
+  updateTheme,
+  selectSettings,
+  Settings,
+} from '../../../store/slices/settingSlice';
+import { selectUserInfo } from '../../../store/slices/authSlice';
 
-const { Option } = Select;
 const { Title, Text } = Typography;
-
-
-const mockUser: UserInfo = {
-  id: '123456',
-  userName: 'dangvu',
-  email: 'dangvu@example.com',
-  avataUrl: 'https://i.pravatar.cc/150?img=13',
-  phoneNumber: '0987654321',
-  firstName: 'Vũ',
-  lastName: 'Đặng',
-  fcmToken: 'fcm-token-demo',
-  status: 'Active',
-  gender: 1,
-  dateOfBirth: '2000-01-01',
-  className: 'CNTT-K22',
-};
-
-const genderMap = ['Khác', 'Nam', 'Nữ'];
 
 const SettingAndProfile: React.FC = () => {
   const dispatch = useDispatch();
   const settings = useSelector(selectSettings);
+  const user = useSelector(selectUserInfo);
 
-  const [user, setUser] = useState<UserInfo>(mockUser);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [form] = Form.useForm();
-
-
-  const showModal = () => {
-    form.setFieldsValue({
-      ...user,
-      dateOfBirth: user.dateOfBirth ? dayjs(user.dateOfBirth) : undefined,
-    });
-    setIsModalVisible(true);
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-  };
-
-  const handleSave = (values: any) => {
-    const updatedUser = {
-      ...user,
-      ...values,
-      dateOfBirth: values.dateOfBirth?.format('YYYY-MM-DD'),
-    };
-    setUser(updatedUser);
-    message.success('Cập nhật hồ sơ thành công!');
-    setIsModalVisible(false);
-  };
-
-  // Xử lý thay đổi cài đặt
+  // Handle setting changes
   const handleSettingChange = (key: keyof Settings, value: boolean) => {
     const newSettings = { ...settings, [key]: value };
     dispatch(updateTheme(newSettings));
     message.success('Cập nhật cài đặt thành công!');
   };
 
+  // Copy color to clipboard
+  const copyToClipboard = (color: string) => {
+    navigator.clipboard.writeText(color);
+    message.success(`Đã sao chép màu ${color}`);
+  };
+
+  // Animation variants for cards
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      <Card
-        title="Thông tin người dùng"
-        extra={<Button icon={<EditOutlined />} onClick={showModal}>Chỉnh sửa</Button>}
-        className="shadow-md rounded-lg"
-      >
-        <div className="flex flex-col items-center gap-6">
-          <Avatar size={120} src={user.avataUrl} icon={<UserOutlined />} />
-          <div className="text-center">
-            <h2 className="text-xl font-semibold">{`${user.lastName} ${user.firstName}`}</h2>
-            <p className="text-gray-600">{`@${user.userName}`}</p>
-            <div>
-              <strong className="mr-2">Email:</strong>
-              <span>{user.email || 'Chưa có'}</span>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      <Modal
-        title="Chỉnh sửa thông tin người dùng"
-        open={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-      >
-        <Form
-          layout="vertical"
-          form={form}
-          onFinish={handleSave}
-          initialValues={user}
+    <div className={`min-h-screen p-6 bg-gray-100`}>
+      <div className="max-w-5xl mx-auto space-y-6">
+        {/* Profile Card */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={cardVariants}
         >
-          <Form.Item name="avataUrl" label="Ảnh đại diện (URL)">
-            <Input />
-          </Form.Item>
-          <Form.Item name="firstName" label="Tên" rules={[{ required: true, message: 'Nhập tên' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="lastName" label="Họ" rules={[{ required: true, message: 'Nhập họ' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="userName" label="Tên người dùng" rules={[{ required: true }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="email" label="Email" rules={[{ type: 'email', message: 'Email không hợp lệ!' }]}>
-            <Input />
-          </Form.Item>
-          <Form.Item name="phoneNumber" label="Số điện thoại">
-            <Input />
-          </Form.Item>
-          <Form.Item name="gender" label="Giới tính">
-            <Select>
-              <Option value={1}>Nam</Option>
-              <Option value={2}>Nữ</Option>
-              <Option value={0}>Khác</Option>
-            </Select>
-          </Form.Item>
-          <Form.Item name="dateOfBirth" label="Ngày sinh">
-            <DatePicker className="w-full" format="YYYY-MM-DD" />
-          </Form.Item>
-          <Form.Item name="className" label="Lớp">
-            <Input />
-          </Form.Item>
-          <div className="flex justify-end gap-2">
-            <Button onClick={handleCancel}>Hủy</Button>
-            <Button type="primary" htmlType="submit">
-              Lưu
-            </Button>
-          </div>
-        </Form>
-      </Modal>
+          <Card
+            title={<span className="text-lg font-semibold">Hồ sơ cá nhân</span>}
+            className={`shadow-lg rounded-xl overflow-hidden ${
+              settings.darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
+            }`}
+            extra={
+              <Button
+                type="text"
+                icon={<EditOutlined />}
+                onClick={() => message.info('Chức năng chỉnh sửa hồ sơ đang phát triển')}
+                className="text-blue-500 hover:text-blue-600"
+              >
+                Chỉnh sửa
+              </Button>
+            }
+          >
+            <div className="flex flex-col md:flex-row items-center gap-8 p-4">
+              <Avatar
+                size={140}
+                src={user?.avatarUrl}
+                icon={<UserOutlined />}
+                className="border-4 border-blue-500"
+              />
+              <div className="text-center md:text-left">
+                <Title level={3} className={`m-0 ${settings.darkMode ? 'text-white' : 'text-gray-800'}`}>
+                  {user ? `${user.firstName} ${user.lastName}` : 'N/A'}
+                </Title>
+                <Text className={`text-base ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}>
+                  @{user?.userName || 'unknown'}
+                </Text>
+                <div className="mt-4 space-y-2">
+                  <div>
+                    <Text strong className={settings.darkMode ? 'text-gray-200' : 'text-gray-700'}>
+                      Email:{' '}
+                    </Text>
+                    <Text className={settings.darkMode ? 'text-gray-300' : 'text-gray-600'}>
+                      {user?.email || 'Chưa cập nhật'}
+                    </Text>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
 
-      <Card title="Cài đặt tài khoản" className="shadow-md rounded-lg">
-        <Title level={5}>Giao diện & Ngôn ngữ</Title>
-        <div className="flex items-center justify-between py-2">
-          <Text>Chế độ tối</Text>
-          <Switch
-            checked={settings.darkMode}
-            onChange={(checked) => handleSettingChange('darkMode', checked)}
-          />
-        </div>
-        <div className="flex items-center justify-between py-2">
-          <Text>Ngôn ngữ (Localization)</Text>
-          <Switch
-            checked={settings.localization}
-            onChange={(checked) => handleSettingChange('localization', checked)}
-          />
-        </div>
-      </Card>
+        {/* Settings Card */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={cardVariants}
+          transition={{ delay: 0.2 }}
+        >
+          <Card
+            title={<span className="text-lg font-semibold">Cài đặt tài khoản</span>}
+            className={`shadow-lg rounded-xl ${
+              settings.darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
+            }`}
+          >
+            <div className="space-y-4 p-4">
+              <Title level={5} className={settings.darkMode ? 'text-white' : 'text-gray-800'}>
+                Giao diện & Ngôn ngữ
+              </Title>
+              <div className="flex items-center justify-between py-2">
+                <Tooltip title="Bật/tắt chế độ tối">
+                  <Text className={settings.darkMode ? 'text-gray-200' : 'text-gray-700'}>Chế độ tối</Text>
+                </Tooltip>
+                <Switch
+                  checked={settings.darkMode}
+                  onChange={(checked) => handleSettingChange('darkMode', checked)}
+                  className="bg-gray-400"
+                />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <Tooltip title="Bật/tắt ngôn ngữ địa phương (tiếng Việt)">
+                  <Text className={settings.darkMode ? 'text-gray-200' : 'text-gray-700'}>Ngôn ngữ (Localization)</Text>
+                </Tooltip>
+                <Switch
+                  checked={settings.localization}
+                  onChange={(checked) => handleSettingChange('localization', checked)}
+                  className="bg-gray-400"
+                />
+              </div>
+            </div>
+          </Card>
+        </motion.div>
 
-      {/* Card kiểm tra màu sắc */}
-      <Card title="Kiểm tra màu sắc" className="shadow-md rounded-lg">
-        <div className="space-y-4">
-          {/* Background Color */}
-          <div className="flex items-center gap-4">
-            <Text>Background:</Text>
-            <div
-              className="w-12 h-12 border"
-              style={{ backgroundColor: 'var(--background)' }}
-            />
-            <Text>{settings.darkMode ? '#2A3334' : '#F9F4FA'}</Text>
-          </div>
-
-          {/* Text Color */}
-          <div className="flex items-center gap-4">
-            <Text>Text:</Text>
-            <div
-              className="w-12 h-12 border"
-              style={{ backgroundColor: 'var(--text-color)' }}
-            />
-            <Text>{settings.darkMode ? '#FFFFFF' : '#2A3334'}</Text>
-          </div>
-
-          {/* Primary Color */}
-          <div className="flex items-center gap-4">
-            <Text>Primary:</Text>
-            <div
-              className="w-12 h-12 border"
-              style={{ backgroundColor: 'var(--primary)' }}
-            />
-            <Text>{settings.darkMode ? '#00F980' : '#00D76B'}</Text>
-          </div>
-
-          {/* Card Background */}
-          <div className="flex items-center gap-4">
-            <Text>Card Background:</Text>
-            <div
-              className="w-12 h-12 border"
-              style={{ backgroundColor: 'var(--card-bg)' }}
-            />
-            <Text>{settings.darkMode ? '#2A2A2A' : '#FFFFFF'}</Text>
-          </div>
-        </div>
-      </Card>
+        {/* Color Testing Card */}
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={cardVariants}
+          transition={{ delay: 0.4 }}
+        >
+          <Card
+            title={<span className="text-lg font-semibold">Kiểm tra màu sắc</span>}
+            className={`shadow-lg rounded-xl ${
+              settings.darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'
+            }`}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4">
+              {[
+                {
+                  label: 'Background',
+                  var: '--background',
+                  color: settings.darkMode ? '#2A3334' : '#F9F4FA',
+                },
+                {
+                  label: 'Text',
+                  var: '--text-color',
+                  color: settings.darkMode ? '#FFFFFF' : '#2A3334',
+                },
+                {
+                  label: 'Primary',
+                  var: '--primary',
+                  color: settings.darkMode ? '#00F980' : '#00D76B',
+                },
+                {
+                  label: 'Card Background',
+                  var: '--card-bg',
+                  color: settings.darkMode ? '#2A2A2A' : '#FFFFFF',
+                },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-4">
+                  <Text className={settings.darkMode ? 'text-gray-200' : 'text-gray-700'}>{item.label}:</Text>
+                  <Tooltip title="Nhấn để sao chép mã màu">
+                    <div
+                      className="w-10 h-10 rounded border border-gray-300 cursor-pointer hover:scale-110 transition-transform"
+                      style={{ backgroundColor: `var(${item.var})` }}
+                      onClick={() => copyToClipboard(item.color)}
+                    />
+                  </Tooltip>
+                  <Text
+                    className={`cursor-pointer hover:underline ${settings.darkMode ? 'text-gray-300' : 'text-gray-600'}`}
+                    onClick={() => copyToClipboard(item.color)}
+                  >
+                    {item.color}
+                  </Text>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </motion.div>
+      </div>
     </div>
   );
 };

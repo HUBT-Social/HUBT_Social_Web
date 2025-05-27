@@ -1,10 +1,15 @@
 import React, { useState } from 'react';
 import { Badge, Button, Dropdown, List, Modal, Typography } from 'antd';
-import { BellOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { BellOutlined, ExclamationCircleOutlined, MenuOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 
-const Header: React.FC = () => {
+interface HeaderProps {
+  onToggleSidebar: () => void;
+  isSidebarOpen: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const notifications = [
@@ -45,7 +50,15 @@ const Header: React.FC = () => {
   );
 
   return (
-    <header className="bg-white shadow-md px-6 py-4 flex justify-end items-center">
+    <header className="bg-white shadow-md px-6 py-4 flex justify-between items-center">
+      {/* Menu icon for mobile */}
+      <button
+        onClick={onToggleSidebar}
+        className="sm:hidden focus:outline-none mr-4"
+      >
+        <MenuOutlined style={{ fontSize: '20px', color: '#555', cursor: 'pointer' }} />
+      </button>
+
       <div className="flex items-center space-x-6">
         {/* Notification Bell */}
         <Dropdown overlay={notificationMenu} trigger={['click']} placement="bottomRight" arrow>

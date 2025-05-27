@@ -1,36 +1,51 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Card, Table, Tag, Spin, Alert, message } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Card, Table, Tag, Spin } from 'antd';
 import StudentEmpty from './StudentEmpty';
 import StudentDetail from './StudentDetail';
 import StudentFilter from '../../../components/StudentFilter';
 import {
   getStudents,
-  selectStudents,
+  selectStudentsFiltered,
   selectStudentsLoading,
   selectStudentsError,
-  selectStudentsFiltered,
+  selectIsLoaded,
 } from '../../../store/slices/studentSlice';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '../../../store/store';
 import { UserInfo } from '../../../types/User';
 import { AlertCircle } from 'lucide-react';
 
-interface GetStudentsPayload { // Define the expected payload structure
-  users: UserInfo[];
-  hasMore: boolean;
-  message: string;
-}
-
 const StudentList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const students = useSelector(selectStudentsFiltered);
   const isLoading = useSelector(selectStudentsLoading);
   const error = useSelector(selectStudentsError);
-  const hasFetchedRef = useRef(false);
+  const isLoaded = useSelector(selectIsLoaded);
   const [currentStudent, setCurrentStudent] = useState<UserInfo | null>(null);
 
+  // Fetch student data
+  const fetchStudentsData = async () => {
+    try {
+      let page = 1;
+      let hasMore = true;
 
-  const handleViewDetail = (userName: string) => { // Changed to userName
+      while (hasMore) {
+        const response = await dispatch(getStudents(page)).unwrap();
+        hasMore = response?.hasMore;
+        page += 1;
+      }
+    } catch (err) {
+      console.error('Lỗi khi fetch dữ liệu sinh viên:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (!isLoaded && students.length === 0) {
+      fetchStudentsData();
+    }
+  }, [isLoaded, students.length]);
+
+  const handleViewDetail = (userName: string) => {
     const selected = students.find((stu) => stu.userName === userName);
     if (selected) {
       setCurrentStudent(selected);
@@ -46,7 +61,7 @@ const StudentList: React.FC = () => {
     {
       title: 'Họ tên',
       key: 'fullName',
-      render: (_: any, record: any) =>
+      render: (_: any, record: UserInfo) =>
         `${record.lastName} ${record.firstName}`.trim(),
     },
     {
@@ -75,8 +90,7 @@ const StudentList: React.FC = () => {
     },
   ];
 
-  // Render different states
-  if (isLoading && !students.length) { // Corrected condition
+  if (isLoading && students.length === 0) {
     return (
       <Card title="Danh sách sinh viên">
         <Spin tip="Đang tải..." />
@@ -100,7 +114,7 @@ const StudentList: React.FC = () => {
       <StudentFilter />
       <Card title="Danh sách sinh viên" className="rounded-lg shadow-md">
         {students.length === 0 ? (
-          <StudentEmpty /> //  Removed onRetry.  Handled in initial fetch.
+          <StudentEmpty />
         ) : (
           <div className="flex gap-6 mt-6">
             <div className="flex-1 bg-white p-4 rounded-lg shadow-md border">
@@ -108,10 +122,10 @@ const StudentList: React.FC = () => {
                 className="hover:cursor-pointer"
                 columns={columns}
                 dataSource={students}
-                rowKey="userName" // Changed to userName
+                rowKey="userName"
                 pagination={{ pageSize: 8 }}
-                onRow={(record) => ({
-                  onClick: () => handleViewDetail(record.userName), // Pass userName
+                onRow={(record: UserInfo) => ({
+                  onClick: () => handleViewDetail(record.userName),
                 })}
               />
             </div>
@@ -149,4 +163,3 @@ const StudentList: React.FC = () => {
 };
 
 export default StudentList;
-

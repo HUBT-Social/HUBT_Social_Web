@@ -12,7 +12,7 @@ import { UserInfo } from '../../types/User';
 import axios from 'axios';
 import { getTokensFromLocalStorage } from '../../helper/tokenHelper';
 
-// Interface cho trạng thái
+// Interface for state
 interface TeacherState {
   loading: boolean;
   teachers: UserInfo[];
@@ -21,7 +21,7 @@ interface TeacherState {
   error: string | null;
 }
 
-// Trạng thái ban đầu
+// Initial state
 const initialState: TeacherState = {
   loading: false,
   teachers: [],
@@ -30,9 +30,19 @@ const initialState: TeacherState = {
   error: null,
 };
 
-// Thunk: Lấy danh sách giáo viên theo trang
+interface GetUserResponse {
+  users: UserInfo[];
+  hasMore: boolean;
+  message: string;
+}
+
+// ========================
+// Async Thunks
+// ========================
+
+// Fetch teachers by page
 export const getTeachers = createAsyncThunk<
-  { users: UserInfo[]; hasMore: boolean; message: string },
+  GetUserResponse,
   number,
   { rejectValue: string }
 >('teachers/get', async (page, { rejectWithValue }) => {
@@ -40,67 +50,94 @@ export const getTeachers = createAsyncThunk<
     const res = await axios.get(
       `https://localhost:7223/api/user/get-user-by-role?roleName=TEACHER&page=${page}`
     );
+    console.log("User: ", res.data.users.length);
     return res.data;
   } catch (error: any) {
     return rejectWithValue(
-      error?.message || 'Không thể tải danh sách giáo viên'
+      error.response?.data?.message || error.message || 'Không thể tải danh sách giáo viên'
     );
   }
 });
 
-// Thunk: Thêm giáo viên
-export const addTeacher = createAsyncThunk<
-  UserInfo,
-  UserInfo,
-  { rejectValue: string }
->('teachers/add', async (newTeacher, { rejectWithValue }) => {
-  try {
-    return newTeacher;
-  } catch (error: any) {
-    return rejectWithValue('Thêm giáo viên thất bại!');
+// Add a new teacher
+export const addTeacher = createAsyncThunk<UserInfo, UserInfo, { rejectValue: string }>(
+  'teachers/add',
+  async (newTeacher, { rejectWithValue }) => {
+    try {
+      const token = getTokensFromLocalStorage();
+      if (!token) return rejectWithValue('Không tìm thấy token xác thực');
+
+      const res = await axios.post(
+        'https://localhost:7223/api/user/add-user',
+        newTeacher,
+        {
+          headers: {
+            Authorization: `Bearer ${token.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return res.data.user;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Thêm giáo viên thất bại'
+      );
+    }
   }
-});
+);
 
-// Thunk: Cập nhật giáo viên
-export const setTeacher = createAsyncThunk<
-  UserInfo | null,
-  UserInfo,
-  { rejectValue: string }
->('teachers/set', async (updatedTeacher, { rejectWithValue }) => {
-  try {
-    const token = getTokensFromLocalStorage();
-    if (!token) return null;
+// Update teacher information
+export const setTeacher = createAsyncThunk<UserInfo | null, UserInfo, { rejectValue: string }>(
+  'teachers/set',
+  async (updatedTeacher, { rejectWithValue }) => {
+    try {
+      const token = getTokensFromLocalStorage();
+      if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-    const res = await axios.put(
-      'https://localhost:7223/api/user/update-user-admin',
-      updatedTeacher,
-      {
+      const res = await axios.put(
+        'https://localhost:7223/api/user/update-user-admin',
+        updatedTeacher,
+        {
+          headers: {
+            Authorization: `Bearer ${token.accessToken}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+      return res.status === 200 ? res.data.user : null;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Cập nhật thông tin thất bại'
+      );
+    }
+  }
+);
+
+// Delete a teacher
+export const deleteTeacher = createAsyncThunk<string, string, { rejectValue: string }>(
+  'teachers/delete',
+  async (username, { rejectWithValue }) => {
+    try {
+      const token = getTokensFromLocalStorage();
+      if (!token) return rejectWithValue('Không tìm thấy token xác thực');
+
+      await axios.delete(`https://localhost:7223/api/user/delete-user/${username}`, {
         headers: {
           Authorization: `Bearer ${token.accessToken}`,
-          'Content-Type': 'application/json',
         },
-      }
-    );
-
-    return res.status === 200 ? updatedTeacher : null;
-  } catch (error: any) {
-    return rejectWithValue('Cập nhật thông tin thất bại!');
+      });
+      return username;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || error.message || 'Xoá giáo viên thất bại'
+      );
+    }
   }
-});
+);
 
-// Thunk: Xoá giáo viên
-export const deleteTeacher = createAsyncThunk<
-  string,
-  string,
-  { rejectValue: string }
->('teachers/delete', async (username, { rejectWithValue }) => {
-  try {
-    return username;
-  } catch (error: any) {
-    return rejectWithValue('Xoá giáo viên thất bại!');
-  }
-});
-
+// ========================
+// Slice
+// ========================
 const teacherSlice = createSlice({
   name: 'teachers',
   initialState,
@@ -110,6 +147,7 @@ const teacherSlice = createSlice({
     },
     setTeachers(state, action: PayloadAction<UserInfo[]>) {
       state.teachers = action.payload;
+      state.filteredTeachers = action.payload;
     },
     setFilteredTeachers(state, action: PayloadAction<UserInfo[]>) {
       state.filteredTeachers = action.payload;
@@ -120,8 +158,9 @@ const teacherSlice = createSlice({
     hydrate(state, action: PayloadAction<any>) {
       const persisted = action.payload?.teachers;
       if (persisted) {
-        state.teachers = persisted;
-        state.filteredTeachers = persisted;
+        state.teachers = persisted.teachers || [];
+        state.filteredTeachers = persisted.filteredTeachers || [];
+        state.isLoaded = persisted.isLoaded || false;
       }
     },
     clearTeachers(state) {
@@ -132,72 +171,74 @@ const teacherSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(getTeachers.fulfilled, (state, action) => {
-        const { users } = action.payload;
+      // GET
+      .addCase(getTeachers.fulfilled, (state, action: PayloadAction<GetUserResponse>) => {
+        console.log('Fetched teachers:', {
+          usersReceived: action.payload.users.length,
+          currentTeachersCount: state.teachers.length,
+        });
 
-        if (users.length === 0) {
-          state.loading = false;
-          return;
-        }
-
-        // Nếu là page đầu tiên => reset
-        if (state.teachers.length === 0) {
-          state.teachers = users;
-          state.filteredTeachers = users;
-        } else {
-          // Chỉ thêm nếu chưa có
-          users.forEach((user) => {
-            const exists = state.teachers.some(
-              (t) => t.userName === user.userName
-            );
-            if (!exists) {
-              state.teachers.push(user);
-              state.filteredTeachers.push(user);
-            }
-          });
-        }
-
+        const newTeachers = action.payload.users.filter(
+          (user) => !state.teachers.some((t) => t.userName === user.userName)
+        );
+        state.teachers = [...state.teachers, ...newTeachers];
+        state.filteredTeachers = [...state.filteredTeachers, ...newTeachers];
         state.loading = false;
+        state.isLoaded = true;
       })
+      // ADD
       .addCase(addTeacher.fulfilled, (state, action) => {
-        state.teachers.push(action.payload);
-        state.filteredTeachers.push(action.payload);
+        state.teachers = [...state.teachers, action.payload];
+        state.filteredTeachers = [...state.filteredTeachers, action.payload];
         state.loading = false;
       })
+      // UPDATE
       .addCase(setTeacher.fulfilled, (state, action) => {
         const updated = action.payload;
         if (!updated) return;
 
-        const updateList = (list: UserInfo[]) => {
-          const index = list.findIndex((u) => u.userName === updated.userName);
-          if (index !== -1) list[index] = updated;
-        };
-
-        updateList(state.teachers);
-        updateList(state.filteredTeachers);
-        state.loading = false;
-      })
-      .addCase(deleteTeacher.fulfilled, (state, action) => {
-        const username = action.payload;
-        state.teachers = state.teachers.filter((t) => t.userName !== username);
-        state.filteredTeachers = state.filteredTeachers.filter(
-          (f) => f.userName !== username
+        state.teachers = state.teachers.map((t) =>
+          t.userName === updated.userName ? updated : t
+        );
+        state.filteredTeachers = state.filteredTeachers.map((t) =>
+          t.userName === updated.userName ? updated : t
         );
         state.loading = false;
       })
+      // DELETE
+      .addCase(deleteTeacher.fulfilled, (state, action) => {
+        const username = action.payload;
+        state.teachers = state.teachers.filter((user) => user.userName !== username);
+        state.filteredTeachers = state.filteredTeachers.filter(
+          (user) => user.userName !== username
+        );
+        state.loading = false;
+      })
+      // GLOBAL MATCHERS
       .addMatcher(isPending, (state) => {
         state.loading = true;
         state.error = null;
       })
-      .addMatcher(isRejected, (state, action) => {
+      .addMatcher(isRejected, (state, action: any) => {
         state.loading = false;
-        const payload = (action as PayloadAction<string>).payload;
-        state.error = payload || action.error.message || 'Lỗi không xác định';
+        state.error = action.payload || 'Lỗi không xác định';
       });
   },
 });
 
-// Export actions
+// ========================
+// Persist Config
+// ========================
+const persistConfig = {
+  key: 'teachers',
+  storage,
+};
+
+export const persistedTeacherReducer = persistReducer(persistConfig, teacherSlice.reducer);
+
+// ========================
+// Export
+// ========================
 export const {
   clearError,
   setFilteredTeachers,
@@ -209,19 +250,9 @@ export const {
 
 // Selectors
 export const selectTeachers = (state: RootState) => state.teachers.teachers;
-export const selectTeachersFiltered = (state: RootState) =>
-  state.teachers.filteredTeachers;
+export const selectTeachersFiltered = (state: RootState) => state.teachers.filteredTeachers;
 export const selectIsLoaded = (state: RootState) => state.teachers.isLoaded;
-export const selectTeachersLoading = (state: RootState) =>
-  state.teachers.loading;
+export const selectTeachersLoading = (state: RootState) => state.teachers.loading;
 export const selectTeachersError = (state: RootState) => state.teachers.error;
 
-// Persist config
-const persistConfig = {
-  key: 'teachers',
-  storage: storage,
-  whitelist: ['teachers', 'filteredTeachers'],
-};
-
-const persistedReducer = persistReducer(persistConfig, teacherSlice.reducer);
-export default persistedReducer;
+export default persistedTeacherReducer;

@@ -11,7 +11,7 @@ import { LoginResponse, UserToken } from '../../types/User';
 // Interfaces
 // ----------------------------
 
-interface UserState {
+export interface UserState {
   avatarUrl: string;
   userName: string;
   firstName: string;
@@ -71,14 +71,18 @@ export const getInfoUser = createAsyncThunk<
   { rejectValue: string }
 >('auth/getInfoUser', async ({ accessToken }, { rejectWithValue }) => {
   try {
-    const response = await instance.get(USER_ENDPOINTS.GET_USER, {
+    const response = await instance.get<UserState>(USER_ENDPOINTS.GET_USER, {
       headers: {
         Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
       },
     });
-    return response.data as UserState;
+    return response.data;
   } catch (error: any) {
-    const errorMessage = error.response?.data?.message || 'Lỗi khi lấy thông tin người dùng';
+    const errorMessage =
+      error.response?.data?.message ||
+      error.message ||
+      'Lỗi khi lấy thông tin người dùng';
     return rejectWithValue(errorMessage);
   }
 });
@@ -193,3 +197,4 @@ export const selectIsAuthenticated = (state: RootState) => state.authUser.isAuth
 export const selectUser = (state: RootState) => state.authUser.user;
 export const selectUserInfo = (state: RootState) => state.authUser.userInfo;
 export const selectUserInfoStatus = (state: RootState) => state.authUser.status;
+export const selectToken = (state: RootState) => state.authUser.token;

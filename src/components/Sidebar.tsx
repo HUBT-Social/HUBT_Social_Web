@@ -8,30 +8,34 @@ import {
   SettingOutlined,
   FileDoneOutlined,
   StarOutlined,
-  BellOutlined
+  BellOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { Menu, Tag } from 'antd';
 import { useEffect} from 'react';
-import {selectUserInfo} from '../store/slices/authSlice';
-import { useSelector } from 'react-redux';
+import {selectUserInfo,getInfoUser,selectToken} from '../store/slices/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch } from '../store/store';
+import defaultAvatar from '../../public/logo.png';
 
-const Sidebar = () => {
+interface SidebarProps {
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, onToggleSidebar }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const userInfo = useSelector(selectUserInfo);
+  const token = useSelector(selectToken);
+  const dispatch = useDispatch<AppDispatch>();
 
-  // const [userInfo, setUserInfo] = useState<UserInfo>({
-  //   userName: 'anhdang',
-  //   email: 'dangvu2212@gmail.com',
-  //   avataUrl: 'https://tse2.mm.bing.net/th?id=OIP.3G5KRwLtuVL9aV_RJH-NkgHaEo&pid=Api&P=0&h=180',
-  //   firstName: "Dang",
-  //   lastName: "Vu"
-  // });
-  
-  useEffect(() => {
-    console.log('User:',userInfo);
-    // Gọi API và set lại
-  }, []);
+    useEffect(() => {
+    console.log('User:', userInfo);
+    if (userInfo === null && token?.accessToken) {
+      dispatch(getInfoUser({ accessToken: token.accessToken }));
+    }
+  }, [userInfo, token, dispatch, getInfoUser]);
 
   // Xác định mục đang active
   const selectedKey = (() => {
@@ -48,14 +52,22 @@ const Sidebar = () => {
 
   const handleMenuClick = ({ key }: { key: string }) => {
     navigate(key);
+    // Tự động đóng sidebar trên mobile sau khi chọn item
+    if (window.innerWidth < 1024) { // Hoặc breakpoint Tailwind 'lg'
+      onToggleSidebar();
+    }
   };
 
   return (
-    <aside className="w-64 h-screen bg-secondary-90 text-white flex flex-col">
+    <aside
+      className={`fixed sm:relative w-64 h-screen bg-secondary-90 text-white flex flex-col z-10
+                  transition-transform duration-300 ease-in-out
+                  ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}`}
+    >
       {/* Logo */}
       <div className="flex flex-col items-center py-6 border-b border-white/10">
         <img
-          src={userInfo?.avatarUrl}
+          src={userInfo?.avatarUrl || defaultAvatar}
           alt="Logo"
           className="w-12 h-12 rounded-full object-cover"
         />
@@ -110,6 +122,14 @@ const Sidebar = () => {
           </div>
         </Menu.Item>
       </Menu>
+
+      {/* Close button for mobile */}
+      <button
+        onClick={onToggleSidebar}
+        className="absolute top-4 right-4 text-white sm:hidden focus:outline-none"
+      >
+        <CloseOutlined style={{ fontSize: '20px' }} />
+      </button>
     </aside>
   );
 };

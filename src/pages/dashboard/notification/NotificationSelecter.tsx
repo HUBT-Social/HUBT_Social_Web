@@ -1,434 +1,685 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Card,
-  Select,
-  Checkbox,
-  Button,
-  Divider,
-  Typography,
   Input,
+  Select,
   Upload,
+  Button,
   Modal,
-  message,
-  Spin,
-} from "antd";
-import { UploadOutlined, CloseOutlined } from "@ant-design/icons";
-import { useDispatch, useSelector } from 'react-redux';
-import { sendNotification, selectNotificationLoading, selectNotificationSuccess, selectNotificationError, clearError, clearSuccess } from '../../../store/slices/notificationSlice';
+  Radio,
+  Alert,
+} from 'antd';
+import {
+  UploadOutlined,
+  EyeOutlined,
+  SendOutlined,
+  UserOutlined,
+  CloseOutlined,
+  CheckCircleOutlined,
+  ExclamationCircleOutlined,
+  InfoCircleOutlined,
+} from '@ant-design/icons';
+import { NotificationPayload, NotificationType ,sendNotification} from '../../../store/slices/notificationSlice';
+import { useSelector , useDispatch} from 'react-redux';
+import { selectStudents} from '../../../store/slices/studentSlice';
+import { selectTeachers} from '../../../store/slices/teacherSlice';
+import { selectToken} from '../../../store/slices/authSlice';
+import { AppDispatch } from '../../../store/store';
 
-const { Title } = Typography;
-const { Option } = Select;
-const { TextArea } = Input;
 
-const faculties = ["CNTT", "QTKD", "KTY"];
-const courses = ["K24", "K25", "K26", "K27"];
-const classes = ["K27CNTTA", "K27CNTTB", "K27QTKDA"];
-const users = ["user01", "user02", "user03"];
-const notificationTypes = [
-  { value: "default", label: "Default", color: "text-gray-600" },
-  { value: "event", label: "Event", color: "text-blue-600" },
-  { value: "warning", label: "Warning", color: "text-red-600" },
-  { value: "announcement", label: "Announcement", color: "text-green-600" },
-  { value: "reminder", label: "Reminder", color: "text-yellow-600" },
-  { value: "urgent", label: "Urgent", color: "text-purple-600" },
+
+
+const notificationTypeOptions = [
+  { value: NotificationType.Default, label: 'Default', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  { value: NotificationType.Event, label: 'Event', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  { value: NotificationType.Warning, label: 'Warning', color: 'text-red-600', bgColor: 'bg-red-100' },
+  { value: NotificationType.Announcement, label: 'Announcement', color: 'text-green-600', bgColor: 'bg-green-100' },
+  { value: NotificationType.Reminder, label: 'Reminder', color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
+  { value: NotificationType.Urgent, label: 'Urgent', color: 'text-purple-600', bgColor: 'bg-purple-100' },
 ];
 
-interface UploadFile {
-  file: File;
-  fileName: string;
-}
-
-const NotificationSelector: React.FC = () => {
-  const dispatch = useDispatch();
-  const isLoading = useSelector(selectNotificationLoading);
-  const success = useSelector(selectNotificationSuccess);
-  const error = useSelector(selectNotificationError);
-
-  const [type, setType] = useState("Thông báo trường");
-  const [sendAll, setSendAll] = useState(false);
-  const [facultySelected, setFacultySelected] = useState<string[]>([]);
-  const [sendAllFaculty, setSendAllFaculty] = useState(false);
-  const [courseSelected, setCourseSelected] = useState<string[]>([]);
-  const [sendAllCourse, setSendAllCourse] = useState(false);
-  const [classSelected, setClassSelected] = useState<string[]>([]);
-  const [sendAllClass, setSendAllClass] = useState(false);
-  const [userSelected, setUserSelected] = useState<string[]>([]);
-  const [title, setTitle] = useState("");
-  const [body, setBody] = useState("");
-  const [imageFile, setImageFile] = useState<UploadFile | null>(null);
-  const [imageUrlPreview, setImageUrlPreview] = useState<string | null>(null);
-  const [requestId, setRequestId] = useState("");
-  const [typeValue, setTypeValue] = useState("default");
+const NotificationSender = () => {
+  // Form state
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [imageFile, setImageFile] = useState<any>(null);
+  const [requestId, setRequestId] = useState('');
+  const [type, setType] = useState(NotificationType.Default);
+  const [recipientType, setRecipientType] = useState('all');
+  const [facultyCodes, setFacultyCodes] = useState<string[]>([]);
+  const [courseCodes, setCourseCodes] = useState<string[]>([]);
+  const [classCodes, setClassCodes] = useState<string[]>([]);
+  const [userNames, setUserNames] = useState<string[]>([]);
+  const students = useSelector(selectStudents);
+  const teachers = useSelector(selectTeachers);
+  
+  
+  // UI state
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
+  const [errors, setErrors] = useState<any>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [notification, setNotification] = useState<any>(null);
 
-  const showCourse = facultySelected.length > 0 && !sendAllFaculty;
-  const showClass = showCourse && courseSelected.length > 0 && !sendAllCourse;
-  const showUser = showClass && classSelected.length > 0 && !sendAllClass;
+  const dispatch = useDispatch<AppDispatch>();
 
-  // Xử lý trạng thái gửi thông báo
-  useEffect(() => {
-    if (success) {
-      message.success('Gửi thông báo thành công!');
-      // Reset form
-      setTitle("");
-      setBody("");
-      setImageFile(null);
-      setImageUrlPreview(null);
-      setRequestId("");
-      setTypeValue("default");
-      setSendAll(false);
-      setFacultySelected([]);
-      setSendAllFaculty(false);
-      setCourseSelected([]);
-      setSendAllCourse(false);
-      setClassSelected([]);
-      setSendAllClass(false);
-      setUserSelected([]);
-      dispatch(clearSuccess());
-    }
-    if (error) {
-      message.error(error);
-      dispatch(clearError());
-    }
-  }, [success, error, dispatch]);
+  // Mock data
+  const users = useMemo(() => [...students, ...teachers], []);
+  const token = useSelector(selectToken)?.accessToken;
 
-  const beforeUpload = (file: File) => {
-    const isImage = file.type.startsWith("image/");
-    if (!isImage) {
-      message.error("Chỉ được chọn file ảnh!");
-      return false;
-    }
-    const isLt2M = file.size / 1024 / 1024 < 2;
-    if (!isLt2M) {
-      message.error("Ảnh phải nhỏ hơn 2MB!");
-      return false;
-    }
-    return true;
-  };
+  // Extract faculties from class names
+  const faculties = useMemo(() => {
+    const facultiesSet = new Set();
+    users.forEach(user => {
+      if (user.className) {
+        const facultyMatch = user.className.match(/^([A-Z]+)/);
+        if (facultyMatch) facultiesSet.add(facultyMatch[1]);
+      }
+    });
+    return Array.from(facultiesSet).sort();
+  }, [users]);
 
-  const handleImageChange = (info: any) => {
-    const file = info.file.originFileObj as File;
-    if (file && beforeUpload(file)) {
-      setImageFile({
-        file,
-        fileName: file.name,
+  // Extract courses based on selected faculties
+  const availableCourses = useMemo(() => {
+    if (!facultyCodes.length) {
+      const coursesSet = new Set();
+      users.forEach(user => {
+        if (user.className) {
+          const courseMatch = user.className.match(/[A-Z]+(\d+)/);
+          if (courseMatch) coursesSet.add(courseMatch[1]);
+        }
       });
-
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImageUrlPreview(reader.result as string);
-      };
-      reader.onerror = () => {
-        message.error("Không thể đọc file ảnh!");
-      };
-      reader.readAsDataURL(file);
+      return Array.from(coursesSet).sort();
     }
-  };
 
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImageUrlPreview(null);
-  };
+    const coursesSet = new Set();
+    users.forEach(user => {
+      if (user.className) {
+        const facultyMatch = user.className.match(/^([A-Z]+)/);
+        const courseMatch = user.className.match(/[A-Z]+(\d+)/);
+        const faculty = facultyMatch ? facultyMatch[1] : '';
+        if (facultyCodes.includes(faculty) && courseMatch) {
+          coursesSet.add(courseMatch[1]);
+        }
+      }
+    });
+    return Array.from(coursesSet).sort();
+  }, [users, facultyCodes]);
 
-  const handlePreview = () => {
-    if (title || body || imageUrlPreview) {
-      setIsPreviewVisible(true);
-    } else {
-      message.info("Vui lòng nhập tiêu đề, nội dung hoặc chọn ảnh để xem trước!");
+  // Extract classes based on selected faculties and courses
+  const availableClasses = useMemo(() => {
+    if (!facultyCodes.length && !courseCodes.length) {
+      const classesSet = new Set();
+      users.forEach(user => {
+        if (user.className) classesSet.add(user.className);
+      });
+      return Array.from(classesSet).sort();
     }
-  };
 
-  const handleCancelPreview = () => {
-    setIsPreviewVisible(false);
-  };
+    const classesSet = new Set();
+    users.forEach(user => {
+      if (user.className) {
+        const facultyMatch = user.className.match(/^([A-Z]+)/);
+        const courseMatch = user.className.match(/[A-Z]+(\d+)/);
+        const faculty = facultyMatch ? facultyMatch[1] : '';
+        const course = courseMatch ? courseMatch[1] : '';
+        const matchesFaculty = !facultyCodes.length || facultyCodes.includes(faculty);
+        const matchesCourse = !courseCodes.length || courseCodes.includes(course);
+        if (matchesFaculty && matchesCourse) {
+          classesSet.add(user.className);
+        }
+      }
+    });
+    return Array.from(classesSet).sort();
+  }, [users, facultyCodes, courseCodes]);
 
-  const handleSubmit = () => {
-    if (!title || !body) {
-      message.error("Vui lòng nhập tiêu đề và nội dung thông báo!");
+  // Extract usernames based on all filters
+  const availableUserNames = useMemo(() => {
+    if (!facultyCodes.length && !courseCodes.length && !classCodes.length) {
+      return users.map(user => user.userName).sort();
+    }
+
+    const userNamesSet = new Set();
+    users.forEach(user => {
+      if (user.className) {
+        const facultyMatch = user.className.match(/^([A-Z]+)/);
+        const courseMatch = user.className.match(/[A-Z]+(\d+)/);
+        const faculty = facultyMatch ? facultyMatch[1] : '';
+        const course = courseMatch ? courseMatch[1] : '';
+        const matchesFaculty = !facultyCodes.length || facultyCodes.includes(faculty);
+        const matchesCourse = !courseCodes.length || courseCodes.includes(course);
+        const matchesClass = !classCodes.length || classCodes.includes(user.className);
+        if (matchesFaculty && matchesCourse && matchesClass) {
+          userNamesSet.add(user.userName);
+        }
+      } else if (!facultyCodes.length && !courseCodes.length && !classCodes.length) {
+        userNamesSet.add(user.userName);
+      }
+    });
+    return Array.from(userNamesSet).sort();
+  }, [users, facultyCodes, courseCodes, classCodes]);
+
+  // Filter users based on current selection
+  const filteredUsers = useMemo(() => {
+    if (recipientType === 'all') return users;
+
+    return users.filter(user => {
+      if (!user.className) return userNames.includes(user.userName);
+
+      const facultyMatch = user.className.match(/^([A-Z]+)/);
+      const courseMatch = user.className.match(/[A-Z]+(\d+)/);
+      const faculty = facultyMatch ? facultyMatch[1] : '';
+      const course = courseMatch ? courseMatch[1] : '';
+
+      const matchesFaculty = !facultyCodes.length || facultyCodes.includes(faculty);
+      const matchesCourse = !courseCodes.length || courseCodes.includes(course);
+      const matchesClass = !classCodes.length || classCodes.includes(user.className);
+      const matchesUserName = !userNames.length || userNames.includes(user.userName);
+
+      return matchesFaculty && matchesCourse && matchesClass && matchesUserName;
+    });
+  }, [users, recipientType, facultyCodes, courseCodes, classCodes, userNames]);
+
+  // Reset dependent selections when parent selections change
+  useEffect(() => {
+    if (facultyCodes.length) {
+      const validCourseCodes = courseCodes.filter(code => availableCourses.includes(code));
+      if (validCourseCodes.length !== courseCodes.length) {
+        setCourseCodes(validCourseCodes);
+      }
+      const validClassCodes = classCodes.filter(code => availableClasses.includes(code));
+      if (validClassCodes.length !== classCodes.length) {
+        setClassCodes(validClassCodes);
+      }
+      const validUserNames = userNames.filter(name => availableUserNames.includes(name));
+      if (validUserNames.length !== userNames.length) {
+        setUserNames(validUserNames);
+      }
+    }
+  }, [facultyCodes, availableCourses, availableClasses, availableUserNames, courseCodes, classCodes, userNames]);
+
+  useEffect(() => {
+    if (courseCodes.length) {
+      const validClassCodes = classCodes.filter(code => availableClasses.includes(code));
+      if (validClassCodes.length !== classCodes.length) {
+        setClassCodes(validClassCodes);
+      }
+      const validUserNames = userNames.filter(name => availableUserNames.includes(name));
+      if (validUserNames.length !== userNames.length) {
+        setUserNames(validUserNames);
+      }
+    }
+  }, [courseCodes, availableClasses, availableUserNames, classCodes, userNames]);
+
+  useEffect(() => {
+    if (classCodes.length) {
+      const validUserNames = userNames.filter(name => availableUserNames.includes(name));
+      if (validUserNames.length !== userNames.length) {
+        setUserNames(validUserNames);
+      }
+    }
+  }, [classCodes, availableUserNames, userNames]);
+
+  const handleImageUpload = useCallback((event: { target: { files: any[]; }; }) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const isImage = file.type.startsWith('image/');
+    if (!isImage) {
+      setErrors((prev: any) => ({ ...prev, image: 'Only image files are allowed!' }));
       return;
     }
 
-    if (imageFile) {
-      const reader = new FileReader();
-      reader.readAsDataURL(imageFile.file);
-      reader.onload = () => {
-        const base64String = reader.result as string;
+    const isLt2M = file.size / 1024 / 1024 < 2;
+    if (!isLt2M) {
+      setErrors((prev: any) => ({ ...prev, image: 'Image must be smaller than 2MB!' }));
+      return;
+    }
 
-        const payload: any = {
-          Title: title,
-          Body: body,
-          Image: { Base64String: base64String, FileName: imageFile.fileName },
-          RequestId: requestId || null,
-          Type: typeValue,
-          FacultyCodes: null,
-          CourseCodes: null,
-          ClassCodes: null,
-          UserNames: null,
-          SendAll: sendAll,
-        };
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImageFile({
+        file: e.target?.result,
+        fileName: file.name,
+        previewUrl: e.target?.result
+      });
+      setErrors((prev: any) => ({ ...prev, image: undefined }));
+    };
+    reader.readAsDataURL(file);
+  }, []);
 
-        if (!sendAll) {
-          if (sendAllFaculty) {
-            payload.FacultyCodes = facultySelected;
-          }
-          if (sendAllCourse) {
-            payload.FacultyCodes = facultySelected;
-            payload.CourseCodes = courseSelected;
-          }
-          if (sendAllClass) {
-            payload.FacultyCodes = facultySelected;
-            payload.CourseCodes = courseSelected;
-            payload.ClassCodes = classSelected;
-          }
-          if (userSelected.length > 0) {
-            payload.FacultyCodes = facultySelected;
-            payload.CourseCodes = courseSelected;
-            payload.ClassCodes = classSelected;
-            payload.UserNames = userSelected;
-          }
-        }
+  const handleDragOver = useCallback((e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
 
-        dispatch(sendNotification(payload) as any);
-      };
-      reader.onerror = () => {
-        message.error("Không thể chuyển đổi ảnh sang Base64!");
-      };
+  const handleDragLeave = useCallback((e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e: { preventDefault: () => void; dataTransfer: { files: Iterable<unknown> | ArrayLike<unknown>; }; }) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      const file = files[0];
+      const fakeEvent = { target: { files: [file] } };
+      handleImageUpload(fakeEvent);
+    }
+  }, [handleImageUpload]);
+
+  const validateForm = () => {
+    const newErrors: any = {};
+    
+    if (!title.trim()) {
+      newErrors.title = 'Title is required';
+    }
+    
+    if (!body.trim()) {
+      newErrors.body = 'Content is required';
+    }
+    
+    if (recipientType === 'specific' && 
+        !facultyCodes.length && 
+        !courseCodes.length && 
+        !classCodes.length && 
+        !userNames.length) {
+      newErrors.recipients = 'Please select at least one recipient criteria';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async () => {
+  if (!validateForm()) return;
+
+  const payload: NotificationPayload = {
+    title,
+    body,
+    image: imageFile?.file
+      ? { base64String: imageFile.file, fileName: imageFile.fileName }
+      : null,
+    type,
+    facultyCodes,
+    courseCodes,
+    classCodes,
+    userNames,
+    sendAll: recipientType === 'all',
+  };
+
+  console.log('Payload:', payload);
+
+  if (!token) {
+    setNotification({
+      type: 'error',
+      message: 'Bạn chưa đăng nhập. Vui lòng đăng nhập để gửi thông báo.',
+    });
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    // Gửi thông báo
+    await dispatch(sendNotification({ payload, token }));
+
+    setNotification({
+      type: 'success',
+      message: 'Gửi thông báo thành công!',
+    });
+
+    // Reset form
+    setTitle('');
+    setBody('');
+    setImageFile(null);
+    setRequestId('');
+    setType(NotificationType.Default);
+    setRecipientType('all');
+    setFacultyCodes([]);
+    setCourseCodes([]);
+    setClassCodes([]);
+    setUserNames([]);
+    setErrors({});
+  } catch (error) {
+    console.error(error);
+    setNotification({
+      type: 'error',
+      message: 'Đã xảy ra lỗi khi gửi thông báo.',
+    });
+  } finally {
+    setIsLoading(false);
+    setTimeout(() => setNotification(null), 3000);
+  }
+};
+  const handlePreview = () => {
+    if (title || body || imageFile) {
+      setIsPreviewVisible(true);
     } else {
-      const payload: any = {
-        Title: title,
-        Body: body,
-        Image: null,
-        RequestId: requestId || null,
-        Type: typeValue,
-        FacultyCodes: null,
-        CourseCodes: null,
-        UserNames: null,
-        SendAll: sendAll,
-      };
-
-      if (!sendAll) {
-        if (sendAllFaculty) {
-          payload.FacultyCodes = facultySelected;
-        }
-        if (sendAllCourse) {
-          payload.FacultyCodes = facultySelected;
-          payload.CourseCodes = courseSelected;
-        }
-        if (sendAllClass) {
-          payload.FacultyCodes = facultySelected;
-          payload.CourseCodes = courseSelected;
-          payload.ClassCodes = classSelected;
-        }
-        if (userSelected.length > 0) {
-          payload.FacultyCodes = facultySelected;
-          payload.CourseCodes = courseSelected;
-          payload.ClassCodes = classSelected;
-          payload.UserNames = userSelected;
-        }
-      }
-
-      dispatch(sendNotification(payload) as any);
+      setNotification({
+        type: 'info',
+        message: 'Please enter title, content, or select an image to preview!'
+      });
+      setTimeout(() => setNotification(null), 3000);
     }
   };
 
-  return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <Card>
-        <Title level={4}>📢 Gửi thông báo</Title>
+  const currentNotificationType = notificationTypeOptions.find(t => t.value === type);
 
-        {/* Nội dung thông báo */}
-        <div className="space-y-6 mb-4">
-          <Input
-            placeholder="Tiêu đề thông báo"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full rounded-lg border-gray-300 shadow-sm"
-          />
-          <div className="mt-4"></div>
-          <TextArea
-            placeholder="Nội dung thông báo"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            rows={4}
-            className="w-full rounded-lg border-gray-300 shadow-sm"
-          />
-          <div className="flex items-center mt-5">
-            {imageUrlPreview ? (
-              <div className="relative w-full">
-                <img
-                  src={imageUrlPreview}
-                  alt="Selected"
-                  className="w-full h-[200px] object-cover rounded-lg"
-                />
-                <CloseOutlined
-                  className="absolute top-2 right-2 bg-gray-200 rounded-full p-1 cursor-pointer text-gray-600 hover:bg-gray-300 transition"
-                  onClick={handleRemoveImage}
-                />
-              </div>
-            ) : (
-              <Upload
-                listType="picture-card"
-                maxCount={1}
-                showUploadList={false}
-                beforeUpload={beforeUpload}
-                onChange={handleImageChange}
-                accept="image/*"
-              >
-                <div>
-                  <UploadOutlined />
-                  <div className="ant-upload-text">Chọn hoặc kéo thả ảnh</div>
-                </div>
-              </Upload>
-            )}
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+      {/* Notification */}
+      {notification && (
+        <Alert
+          message={notification.message}
+          type={notification.type}
+          showIcon
+          icon={
+            notification.type === 'success' ? <CheckCircleOutlined /> :
+            notification.type === 'error' ? <ExclamationCircleOutlined /> :
+            <InfoCircleOutlined />
+          }
+          className="fixed top-4 right-4 z-50 max-w-sm"
+          closable
+          onClose={() => setNotification(null)}
+        />
+      )}
+
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 flex items-center">
+          <SendOutlined className="mr-3 text-blue-600" />
+          Send Notification
+        </h1>
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          {/* Left Column - Basic Info */}
+          <div className="space-y-6">
+            {/* Title */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Title *
+              </label>
+              <Input
+                placeholder="Enter notification title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                status={errors.title ? 'error' : ''}
+                disabled={isLoading}
+                className="rounded-lg"
+              />
+              {errors.title && (
+                <p className="text-red-500 text-xs mt-1">{errors.title}</p>
+              )}
+            </div>
+
+            {/* Content */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Content *
+              </label>
+              <Input.TextArea
+                placeholder="Enter notification content"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={4}
+                status={errors.body ? 'error' : ''}
+                disabled={isLoading}
+                className="rounded-lg"
+              />
+              {errors.body && (
+                <p className="text-red-500 text-xs mt-1">{errors.body}</p>
+              )}
+            </div>
+
+            {/* Notification Type */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Notification Type
+              </label>
+              <Select
+                value={type}
+                onChange={setType}
+                options={notificationTypeOptions}
+                disabled={isLoading}
+                className="w-full"
+              />
+            </div>
+
+            {/* Request ID */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Request ID (Optional)
+              </label>
+              <Input
+                placeholder="Enter request ID"
+                value={requestId}
+                onChange={(e) => setRequestId(e.target.value)}
+                disabled={isLoading}
+                className="rounded-lg"
+              />
+            </div>
           </div>
-          <Select
-            value={typeValue}
-            onChange={setTypeValue}
-            className="w-full"
-            popupClassName="rounded-lg shadow-lg border border-gray-200"
-            optionRender={({ data }) => {
-              const type = notificationTypes.find((t) => t.value === data.value);
-              return (
-                <div
-                  className={`flex items-center px-3 py-2 rounded mx-1 hover:bg-gray-100 transition-colors ${type?.color}`}
-                  style={{ backgroundColor: type?.color.replace("text-", "bg-") + "/10" }}
-                >
-                  <span>{type?.label}</span>
+
+          {/* Right Column - Image Upload */}
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Image (Optional)
+              </label>
+              {imageFile ? (
+                <div className="relative">
+                  <img
+                    src={imageFile.previewUrl}
+                    alt="Preview"
+                    className="w-full h-64 object-cover rounded-lg shadow-md"
+                  />
+                  <Button
+                    icon={<CloseOutlined />}
+                    shape="circle"
+                    onClick={() => setImageFile(null)}
+                    className="absolute top-2 right-2 bg-red-500 text-white border-none hover:bg-red-600"
+                  />
                 </div>
-              );
-            }}
-          >
-            {notificationTypes.map((type) => (
-              <Option key={type.value} value={type.value}>
-                {type.label}
-              </Option>
-            ))}
-          </Select>
+              ) : (
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                  }`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <UploadOutlined className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">Drag & drop an image here, or</p>
+                  <Upload
+                    accept="image/*"
+                    showUploadList={false}
+                    customRequest={({ file }) => {
+                      const fakeEvent = { target: { files: [file] } };
+                      handleImageUpload(fakeEvent);
+                    }}
+                    disabled={isLoading}
+                  >
+                    <Button
+                      icon={<UploadOutlined />}
+                      className="bg-blue-500 text-white border-none hover:bg-blue-600"
+                    >
+                      Choose File
+                    </Button>
+                  </Upload>
+                  <p className="text-xs text-gray-500 mt-2">PNG, JPG up to 2MB</p>
+                </div>
+              )}
+              {errors.image && (
+                <p className="text-red-500 text-xs mt-1">{errors.image}</p>
+              )}
+            </div>
+          </div>
         </div>
 
-        <Divider />
+        {/* Recipients Section */}
+        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+            <UserOutlined className="mr-2" />
+            Recipients
+          </h3>
+          
+          <div className="space-y-4">
+            <Radio.Group
+              value={recipientType}
+              onChange={(e) => setRecipientType(e.target.value)}
+              disabled={isLoading}
+              className="flex space-x-4"
+            >
+              <Radio value="all">Send to entire school</Radio>
+              <Radio value="specific">Send to specific recipients</Radio>
+            </Radio.Group>
 
-        <Checkbox checked={sendAll} onChange={(e) => setSendAll(e.target.checked)}>
-          Gửi đến toàn bộ trường
-        </Checkbox>
-
-        {!sendAll && (
-          <div className="space-y-4 mt-4">
-            <div>
-              <label>Chọn ngành</label>
-              <Select
-                mode="multiple"
-                className="w-full mt-1"
-                placeholder="Chọn ngành"
-                value={facultySelected}
-                onChange={setFacultySelected}
-              >
-                {faculties.map((f) => (
-                  <Option key={f}>{f}</Option>
-                ))}
-              </Select>
-              <Checkbox
-                checked={sendAllFaculty}
-                onChange={(e) => setSendAllFaculty(e.target.checked)}
-                className="mt-2"
-              >
-                Gửi đến tất cả ngành đã chọn
-              </Checkbox>
-            </div>
-            {showCourse && (
-              <div>
-                <label>Chọn khóa</label>
-                <Select
-                  mode="multiple"
-                  className="w-full mt-1"
-                  placeholder="Chọn khóa"
-                  value={courseSelected}
-                  onChange={setCourseSelected}
-                >
-                  {courses.map((c) => (
-                    <Option key={c}>{c}</Option>
-                  ))}
-                </Select>
-                <Checkbox
-                  checked={sendAllCourse}
-                  onChange={(e) => setSendAllCourse(e.target.checked)}
-                  className="mt-2"
-                >
-                  Gửi đến tất cả khóa đã chọn
-                </Checkbox>
+            {recipientType === 'specific' && (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Faculties
+                  </label>
+                  <Select
+                    mode="multiple"
+                    placeholder="Select faculties"
+                    value={facultyCodes}
+                    onChange={setFacultyCodes}
+                    options={faculties.map(f => ({ label: f, value: f }))}
+                    disabled={isLoading}
+                    className="w-full"
+                    notFoundContent={<span>No options available</span>}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Courses
+                  </label>
+                  <Select
+                    mode="multiple"
+                    placeholder="Select courses"
+                    value={courseCodes}
+                    onChange={setCourseCodes}
+                    options={availableCourses.map(c => ({ label: c, value: c }))}
+                    disabled={isLoading || !availableCourses.length}
+                    className="w-full"
+                    notFoundContent={<span>No options available</span>}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Classes
+                  </label>
+                  <Select
+                    mode="multiple"
+                    placeholder="Select classes"
+                    value={classCodes}
+                    onChange={setClassCodes}
+                    options={availableClasses.map(c => ({ label: c, value: c }))}
+                    disabled={isLoading || !availableClasses.length}
+                    className="w-full"
+                    notFoundContent={<span>No options available</span>}
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-600 mb-1">
+                    Users
+                  </label>
+                  <Select
+                    mode="multiple"
+                    placeholder="Select users"
+                    value={userNames}
+                    onChange={setUserNames}
+                    options={availableUserNames.map(u => ({ label: u, value: u }))}
+                    disabled={isLoading || !availableUserNames.length}
+                    className="w-full"
+                    notFoundContent={<span>No options available</span>}
+                  />
+                </div>
               </div>
             )}
-            {showClass && (
-              <div>
-                <label>Chọn lớp</label>
-                <Select
-                  mode="multiple"
-                  className="w-full mt-1"
-                  placeholder="Chọn lớp"
-                  value={classSelected}
-                  onChange={setClassSelected}
-                >
-                  {classes.map((cls) => (
-                    <Option key={cls}>{cls}</Option>
-                  ))}
-                </Select>
-                <Checkbox
-                  checked={sendAllClass}
-                  onChange={(e) => setSendAllClass(e.target.checked)}
-                  className="mt-2"
-                >
-                  Gửi đến tất cả lớp đã chọn
-                </Checkbox>
-              </div>
+
+            {errors.recipients && (
+              <p className="text-red-500 text-xs">{errors.recipients}</p>
             )}
-            {showUser && (
-              <div>
-                <label>Chọn người dùng cụ thể</label>
-                <Select
-                  mode="multiple"
-                  className="w-full mt-1"
-                  placeholder="Chọn người dùng"
-                  value={userSelected}
-                  onChange={setUserSelected}
-                >
-                  {users.map((u) => (
-                    <Option key={u}>{u}</Option>
-                  ))}
-                </Select>
+
+            {recipientType === 'specific' && (
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <p className="text-sm text-blue-700">
+                  <strong>{filteredUsers.length}</strong> users will receive this notification
+                </p>
+                {filteredUsers.length === 0 && (
+                  <p className="text-sm text-amber-600 mt-1">
+                    No users match the selected criteria
+                  </p>
+                )}
               </div>
             )}
           </div>
-        )}
+        </div>
 
-        <Divider />
+        {/* Action Buttons */}
+        <div className="flex justify-end space-x-4 mt-8">
+          <Button
+            icon={<EyeOutlined />}
+            onClick={handlePreview}
+            disabled={isLoading}
+            className="border-gray-300 hover:bg-gray-50"
+          >
+            Preview
+          </Button>
+          <Button
+            type="primary"
+            icon={<SendOutlined />}
+            onClick={handleSubmit}
+            disabled={isLoading}
+            loading={isLoading}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Send Notification
+          </Button>
+        </div>
+      </div>
 
-        <Button className="mb-2 mr-5" onClick={handlePreview}>
-          👀 Xem trước
-        </Button>
-        <Button
-          type="primary"
-          className="bg-blue-600"
-          onClick={handleSubmit}
-          disabled={isLoading}
-        >
-          {isLoading ? <Spin size="small" /> : "✅ Gửi thông báo"}
-        </Button>
-      </Card>
-
+      {/* Preview Modal */}
       <Modal
-        title="Xem trước thông báo"
+        title="Notification Preview"
         open={isPreviewVisible}
-        onCancel={handleCancelPreview}
+        onCancel={() => setIsPreviewVisible(false)}
         footer={null}
+        className="max-w-md"
       >
-        {title && <Typography.Title level={5}>{title}</Typography.Title>}
-        {body && <Typography.Paragraph>{body}</Typography.Paragraph>}
-        {imageUrlPreview && (
-          <img alt="Preview" style={{ width: "100%" }} src={imageUrlPreview} />
-        )}
+        <div className={`p-4 rounded-lg border-l-4 ${currentNotificationType?.bgColor} border-l-${currentNotificationType?.color.split('-')[1]}-500`}>
+          {title && (
+            <h4 className={`font-semibold mb-2 ${currentNotificationType?.color}`}>
+              {title}
+            </h4>
+          )}
+          {body && (
+            <p className="text-gray-700 mb-3">{body}</p>
+          )}
+          {imageFile && (
+            <img
+              src={imageFile.previewUrl}
+              alt="Preview"
+              className="w-full rounded-lg"
+            />
+          )}
+          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
+            <span className={`text-xs px-2 py-1 rounded ${currentNotificationType?.bgColor} ${currentNotificationType?.color}`}>
+              {currentNotificationType?.label}
+            </span>
+            <span className="text-xs text-gray-500">Just now</span>
+          </div>
+        </div>
       </Modal>
     </div>
   );
 };
 
-export default NotificationSelector;
+export default NotificationSender;

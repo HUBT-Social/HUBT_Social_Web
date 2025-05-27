@@ -43,3 +43,25 @@ export const getTokensFromLocalStorage = (): UserToken | null => {
 };
 export const userFromStorage = localStorage.getItem('user');
 
+
+export const storageService = {
+  getItem: (key: string) => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(key);
+    }
+    return null;
+  },
+  setItem: (key: string, value: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(key, value);
+    }
+  },
+  removeItem: (key: string) => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(key);
+    }
+  },
+  clear: () => {
+    localStorage.clear();
+  }
+};
