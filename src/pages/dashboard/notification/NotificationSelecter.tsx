@@ -368,7 +368,7 @@ const NotificationSender = () => {
   const currentNotificationType = notificationTypeOptions.find(t => t.value === type);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
+    <div className="min-h-screen bg-white ">
       {/* Notification */}
       {notification && (
         <Alert
@@ -386,7 +386,7 @@ const NotificationSender = () => {
         />
       )}
 
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8">
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-x2 p-8">
         <h1 className="text-3xl font-bold text-gray-800 mb-8 flex items-center">
           <SendOutlined className="mr-3 text-blue-600" />
           Send Notification

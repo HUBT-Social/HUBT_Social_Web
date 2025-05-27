@@ -22,6 +22,9 @@ import ExamManagement from '../pages/dashboard/exams';
 import SettingAndProfile from '../pages/dashboard/settings';
 import BillLayout from '../pages/dashboard/billing';
 import TeaturesLayout from '../pages/dashboard/features';
+import NotificationLayout from '../pages/dashboard/notification';
+import NotificationScreen from '../pages/dashboard/notification/NotificationScreen';
+import SendAcademicNotificationScreen from '../pages/dashboard/notification/SendAcademicNotificationScreen';
 
 // Hàm kiểm tra token còn hạn hay không
 const availableToken = (): boolean => {
@@ -31,9 +34,9 @@ const availableToken = (): boolean => {
 
 // Component bảo vệ route
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  if (!userFromStorage || !availableToken()) {
-    return React.createElement(Navigate, { to: '/login', replace: true });
-  }
+  // if (!userFromStorage || !availableToken()) {
+  //   return React.createElement(Navigate, { to: '/login', replace: true });
+  // }
   return React.createElement(React.Fragment, null, children);
 };
 
@@ -73,14 +76,23 @@ const privateRoutes: RouteObject[] = [
           { path: '*', element: React.createElement(NotFoundPage) },
         ],
       },
-      { path: 'notition', element: React.createElement(NotificationSelector) },
+      {
+        path: 'notition',
+        element: React.createElement(NotificationLayout),
+        children: [
+          { index: true, element: React.createElement(NotificationScreen) },
+          { path: 'condition', element: React.createElement(NotificationSelector)},
+          { path: 'academic', element: React.createElement(SendAcademicNotificationScreen)},
+          { path: '*', element: React.createElement(NotFoundPage) },
+        ],
+      },
       { path: 'settings', element: React.createElement(SettingAndProfile) },
       { path: 'billing', element: React.createElement(BillLayout) },
       { path: 'exams', element: React.createElement(ExamManagement) },
       { path: 'features', element: React.createElement(TeaturesLayout) },
     ],
   },
-];
+];//NotificationLayout
 
 // Combine các route
 const AppRoutes: React.FC = () => {

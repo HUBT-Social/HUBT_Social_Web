@@ -17,6 +17,7 @@ import {selectUserInfo,getInfoUser,selectToken} from '../store/slices/authSlice'
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '../store/store';
 import defaultAvatar from '../../public/logo.png';
+import backgroud from '../assets/Group.png';
 
 interface SidebarProps {
   isSidebarOpen: boolean;
@@ -60,12 +61,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, onToggleSidebar }) => 
 
   return (
     <aside
-      className={`fixed sm:relative w-64 h-screen bg-secondary-90 text-white flex flex-col z-10
+      className={`fixed sm:relative w-64 h-screen bg-indigo-600 text-white flex flex-col z-10
                   transition-transform duration-300 ease-in-out
                   ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full sm:translate-x-0'}`}
     >
       {/* Logo */}
-      <div className="flex flex-col items-center py-6 border-b border-white/10">
+      <div className="flex flex-col items-center py-6 ">
         <img
           src={userInfo?.avatarUrl || defaultAvatar}
           alt="Logo"
@@ -83,7 +84,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, onToggleSidebar }) => 
         selectedKeys={[selectedKey]}
         onClick={handleMenuClick}
         className="flex-1 pt-4"
-        style={{backgroundColor: 'var(--color-secondary-90)', borderInlineEnd: 'none' }}
+        style={{
+          background: 'linear-gradient(to bottom, var(--color-indigo-600), var(--color-purple-600))',
+          borderInlineEnd: 'none'
+        }}
       >
         <Menu.Item key="/dashboard" icon={<AppstoreOutlined />}>
           Dashboard
@@ -122,6 +126,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, onToggleSidebar }) => 
           </div>
         </Menu.Item>
       </Menu>
+
+      {/* Backgroud */}
+      <div className="flex flex-col items-center py-6 bg-gradient-to-b from-purple-600 to-indigo-600">
+        <img
+          src={backgroud}
+          alt=""
+          className="w-full h-full object-cover"
+        />
+       
+      </div>
 
       {/* Close button for mobile */}
       <button
