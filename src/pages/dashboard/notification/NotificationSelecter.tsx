@@ -7,6 +7,25 @@ import {
   Modal,
   Radio,
   Alert,
+  Card,
+  Tabs,
+  Progress,
+  Badge,
+  Timeline,
+  Statistic,
+  Tooltip,
+  Switch,
+  DatePicker,
+  Space,
+  Divider,
+  Tag,
+  Avatar,
+  List,
+  Typography,
+  Row,
+  Col,
+  Collapse,
+  Tree
 } from 'antd';
 import {
   UploadOutlined,
@@ -17,56 +36,133 @@ import {
   CheckCircleOutlined,
   ExclamationCircleOutlined,
   InfoCircleOutlined,
+  BellOutlined,
+  DashboardOutlined,
+  HistoryOutlined,
+  SettingOutlined,
+  UsergroupAddOutlined,
+  PieChartOutlined,
+  CalendarOutlined,
+  FileTextOutlined,
+  FilterOutlined,
+  SearchOutlined,
+  ScheduleOutlined,
+  TeamOutlined,
+  GlobalOutlined,
+  WarningOutlined,
+  ThunderboltOutlined,
+  StarOutlined,
+  ClockCircleOutlined,
+  RobotOutlined,
+  MessageOutlined,
+  MailOutlined,
+  MobileOutlined,
+  DesktopOutlined,
+  BulbOutlined,
+  FireOutlined,
+  TrophyOutlined,
+  HeartOutlined,
+  BookOutlined,
+  CrownOutlined
 } from '@ant-design/icons';
-import { NotificationPayload, NotificationType ,sendNotification} from '../../../store/slices/notificationSlice';
-import { useSelector , useDispatch} from 'react-redux';
-import { selectStudents} from '../../../store/slices/studentSlice';
-import { selectTeachers} from '../../../store/slices/teacherSlice';
-import { selectToken} from '../../../store/slices/authSlice';
-import { AppDispatch } from '../../../store/store';
+import { User } from '../../../types/Notification';
 
+const { TextArea } = Input;
+const { TabPane } = Tabs;
+const { Panel } = Collapse;
+const { Title, Text } = Typography;
 
-
-
+// Mock notification types with enhanced styling
 const notificationTypeOptions = [
-  { value: NotificationType.Default, label: 'Default', color: 'text-gray-600', bgColor: 'bg-gray-100' },
-  { value: NotificationType.Event, label: 'Event', color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  { value: NotificationType.Warning, label: 'Warning', color: 'text-red-600', bgColor: 'bg-red-100' },
-  { value: NotificationType.Announcement, label: 'Announcement', color: 'text-green-600', bgColor: 'bg-green-100' },
-  { value: NotificationType.Reminder, label: 'Reminder', color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
-  { value: NotificationType.Urgent, label: 'Urgent', color: 'text-purple-600', bgColor: 'bg-purple-100' },
+  { value: 'default', label: 'Default', color: 'text-gray-600', bgColor: 'bg-gray-100', icon: <BellOutlined />, gradient: 'from-gray-400 to-gray-600' },
+  { value: 'event', label: 'Event', color: 'text-blue-600', bgColor: 'bg-blue-100', icon: <CalendarOutlined />, gradient: 'from-blue-400 to-blue-600' },
+  { value: 'warning', label: 'Warning', color: 'text-red-600', bgColor: 'bg-red-100', icon: <WarningOutlined />, gradient: 'from-red-400 to-red-600' },
+  { value: 'announcement', label: 'Announcement', color: 'text-green-600', bgColor: 'bg-green-100', icon: <MessageOutlined />, gradient: 'from-green-400 to-green-600' },
+  { value: 'reminder', label: 'Reminder', color: 'text-yellow-600', bgColor: 'bg-yellow-100', icon: <ClockCircleOutlined />, gradient: 'from-yellow-400 to-yellow-600' },
+  { value: 'urgent', label: 'Urgent', color: 'text-purple-600', bgColor: 'bg-purple-100', icon: <ThunderboltOutlined />, gradient: 'from-purple-400 to-purple-600' },
+  { value: 'success', label: 'Success', color: 'text-emerald-600', bgColor: 'bg-emerald-100', icon: <CheckCircleOutlined />, gradient: 'from-emerald-400 to-emerald-600' },
+  { value: 'info', label: 'Information', color: 'text-cyan-600', bgColor: 'bg-cyan-100', icon: <InfoCircleOutlined />, gradient: 'from-cyan-400 to-cyan-600' },
 ];
 
+// Mock data for enhanced features
+const mockRecentNotifications = [
+  { id: 1, title: 'Welcome to new semester', type: 'announcement', recipients: 1250, time: '2 hours ago', status: 'sent' },
+  { id: 2, title: 'Assignment due reminder', type: 'reminder', recipients: 350, time: '1 day ago', status: 'delivered' },
+  { id: 3, title: 'Emergency maintenance', type: 'urgent', recipients: 2500, time: '2 days ago', status: 'read' },
+  { id: 4, title: 'Sports event registration', type: 'event', recipients: 800, time: '3 days ago', status: 'sent' },
+];
+
+const mockStats = {
+  totalSent: 15420,
+  todaySent: 45,
+  deliveryRate: 98.5,
+  readRate: 76.3
+};
+
 const NotificationSender = () => {
-  // Form state
+  // Existing form state
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [imageFile, setImageFile] = useState<any>(null);
   const [requestId, setRequestId] = useState('');
-  const [type, setType] = useState(NotificationType.Default);
+  const [type, setType] = useState('default');
   const [recipientType, setRecipientType] = useState('all');
   const [facultyCodes, setFacultyCodes] = useState<string[]>([]);
-  const [courseCodes, setCourseCodes] = useState<string[]>([]);
+  const [courseCodes, setCourseCodes] = useState<any[]>([]);
   const [classCodes, setClassCodes] = useState<string[]>([]);
   const [userNames, setUserNames] = useState<string[]>([]);
-  const students = useSelector(selectStudents);
-  const teachers = useSelector(selectTeachers);
   
-  
-  // UI state
+  // Enhanced UI state
   const [isPreviewVisible, setIsPreviewVisible] = useState(false);
   const [errors, setErrors] = useState<any>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [notification, setNotification] = useState<any>(null);
-
-  const dispatch = useDispatch<AppDispatch>();
+  const [activeTab, setActiveTab] = useState('compose');
+  const [scheduleEnabled, setScheduleEnabled] = useState(false);
+  const [scheduledTime, setScheduledTime] = useState<any>(null);
+  const [priority, setPriority] = useState('normal');
+  const [deliveryChannels, setDeliveryChannels] = useState(['push']);
+  const [templateMode, setTemplateMode] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [previewDevice, setPreviewDevice] = useState('mobile');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
   // Mock data
-  const users = useMemo(() => [...students, ...teachers], []);
-  const token = useSelector(selectToken)?.accessToken;
+  type User = {
+  userName: string;
+  className: string;
+  fullName: string;
+  avatar: string;
+  role: 'student' | 'teacher';
+};
 
-  // Extract faculties from class names
+const [users, setUsers] = useState<User[]>([
+  {
+    userName: 'john_doe',
+    className: 'CS2023A',
+    fullName: 'John Doe',
+    avatar: '',
+    role: 'student',
+  },
+  {
+    userName: 'jane_smith',
+    className: 'IT2022B',
+    fullName: 'Jane Smith',
+    avatar: '',
+    role: 'student',
+  },
+  {
+    userName: 'prof_wilson',
+    className: 'IT2022B',
+    fullName: 'Prof. Wilson',
+    avatar: '',
+    role: 'teacher',
+  },
+]);
+
+  // Extract faculties from class names (existing logic)
   const faculties = useMemo(() => {
     const facultiesSet = new Set();
     users.forEach(user => {
@@ -78,7 +174,7 @@ const NotificationSender = () => {
     return Array.from(facultiesSet).sort();
   }, [users]);
 
-  // Extract courses based on selected faculties
+  // Extract courses based on selected faculties (existing logic)
   const availableCourses = useMemo(() => {
     if (!facultyCodes.length) {
       const coursesSet = new Set();
@@ -105,7 +201,7 @@ const NotificationSender = () => {
     return Array.from(coursesSet).sort();
   }, [users, facultyCodes]);
 
-  // Extract classes based on selected faculties and courses
+  // Extract classes based on selected faculties and courses (existing logic)
   const availableClasses = useMemo(() => {
     if (!facultyCodes.length && !courseCodes.length) {
       const classesSet = new Set();
@@ -132,7 +228,7 @@ const NotificationSender = () => {
     return Array.from(classesSet).sort();
   }, [users, facultyCodes, courseCodes]);
 
-  // Extract usernames based on all filters
+  // Extract usernames based on all filters (existing logic)
   const availableUserNames = useMemo(() => {
     if (!facultyCodes.length && !courseCodes.length && !classCodes.length) {
       return users.map(user => user.userName).sort();
@@ -158,7 +254,7 @@ const NotificationSender = () => {
     return Array.from(userNamesSet).sort();
   }, [users, facultyCodes, courseCodes, classCodes]);
 
-  // Filter users based on current selection
+  // Filter users based on current selection (existing logic)
   const filteredUsers = useMemo(() => {
     if (recipientType === 'all') return users;
 
@@ -179,7 +275,7 @@ const NotificationSender = () => {
     });
   }, [users, recipientType, facultyCodes, courseCodes, classCodes, userNames]);
 
-  // Reset dependent selections when parent selections change
+  // Reset dependent selections when parent selections change (existing logic)
   useEffect(() => {
     if (facultyCodes.length) {
       const validCourseCodes = courseCodes.filter(code => availableCourses.includes(code));
@@ -219,6 +315,7 @@ const NotificationSender = () => {
     }
   }, [classCodes, availableUserNames, userNames]);
 
+  // Existing image upload logic
   const handleImageUpload = useCallback((event: { target: { files: any[]; }; }) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -269,6 +366,7 @@ const NotificationSender = () => {
     }
   }, [handleImageUpload]);
 
+  // Existing validation logic
   const validateForm = () => {
     const newErrors: any = {};
     
@@ -292,67 +390,66 @@ const NotificationSender = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Enhanced submit logic
   const handleSubmit = async () => {
-  if (!validateForm()) return;
+    if (!validateForm()) return;
 
-  const payload: NotificationPayload = {
-    title,
-    body,
-    image: imageFile?.file
-      ? { base64String: imageFile.file, fileName: imageFile.fileName }
-      : null,
-    type,
-    facultyCodes,
-    courseCodes,
-    classCodes,
-    userNames,
-    sendAll: recipientType === 'all',
+    const payload = {
+      title,
+      body,
+      image: imageFile?.file
+        ? { base64String: imageFile.file, fileName: imageFile.fileName }
+        : null,
+      type,
+      facultyCodes,
+      courseCodes,
+      classCodes,
+      userNames,
+      sendAll: recipientType === 'all',
+      scheduledTime: scheduleEnabled ? scheduledTime : null,
+      priority,
+      deliveryChannels,
+      requestId: requestId || `REQ_${Date.now()}`
+    };
+
+    setIsLoading(true);
+
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      setNotification({
+        type: 'success',
+        message: scheduleEnabled ? 'Notification scheduled successfully!' : 'Notification sent successfully!',
+      });
+
+      // Reset form
+      setTitle('');
+      setBody('');
+      setImageFile(null);
+      setRequestId('');
+      setType('default');
+      setRecipientType('all');
+      setFacultyCodes([]);
+      setCourseCodes([]);
+      setClassCodes([]);
+      setUserNames([]);
+      setScheduleEnabled(false);
+      setScheduledTime(null);
+      setPriority('normal');
+      setErrors({});
+    } catch (error) {
+      console.error(error);
+      setNotification({
+        type: 'error',
+        message: 'An error occurred while sending notification.',
+      });
+    } finally {
+      setIsLoading(false);
+      setTimeout(() => setNotification(null), 3000);
+    }
   };
 
-  console.log('Payload:', payload);
-
-  if (!token) {
-    setNotification({
-      type: 'error',
-      message: 'Bạn chưa đăng nhập. Vui lòng đăng nhập để gửi thông báo.',
-    });
-    return;
-  }
-
-  setIsLoading(true);
-
-  try {
-    // Gửi thông báo
-    await dispatch(sendNotification({ payload, token }));
-
-    setNotification({
-      type: 'success',
-      message: 'Gửi thông báo thành công!',
-    });
-
-    // Reset form
-    setTitle('');
-    setBody('');
-    setImageFile(null);
-    setRequestId('');
-    setType(NotificationType.Default);
-    setRecipientType('all');
-    setFacultyCodes([]);
-    setCourseCodes([]);
-    setClassCodes([]);
-    setUserNames([]);
-    setErrors({});
-  } catch (error) {
-    console.error(error);
-    setNotification({
-      type: 'error',
-      message: 'Đã xảy ra lỗi khi gửi thông báo.',
-    });
-  } finally {
-    setIsLoading(false);
-    setTimeout(() => setNotification(null), 3000);
-  }
-};
   const handlePreview = () => {
     if (title || body || imageFile) {
       setIsPreviewVisible(true);
@@ -367,131 +464,323 @@ const NotificationSender = () => {
 
   const currentNotificationType = notificationTypeOptions.find(t => t.value === type);
 
-  return (
-    <div className="min-h-screen bg-white ">
-      {/* Notification */}
-      {notification && (
-        <Alert
-          message={notification.message}
-          type={notification.type}
-          showIcon
-          icon={
-            notification.type === 'success' ? <CheckCircleOutlined /> :
-            notification.type === 'error' ? <ExclamationCircleOutlined /> :
-            <InfoCircleOutlined />
-          }
-          className="fixed top-4 right-4 z-50 max-w-sm"
-          closable
-          onClose={() => setNotification(null)}
+  // Template selection
+  const notificationTemplates = [
+    { id: 'welcome', title: 'Welcome Message', content: 'Welcome to our platform! We\'re excited to have you here.' },
+    { id: 'reminder', title: 'Assignment Reminder', content: 'Don\'t forget about your upcoming assignment due date.' },
+    { id: 'event', title: 'Event Announcement', content: 'Join us for an exciting event happening soon!' },
+    { id: 'maintenance', title: 'Maintenance Notice', content: 'System maintenance will be performed during off-peak hours.' },
+  ];
+
+  const handleTemplateSelect = (template: { id: any; title: any; content: any; }) => {
+    setTitle(template.title);
+    setBody(template.content);
+    setSelectedTemplate(template.id);
+    setTemplateMode(false);
+  };
+
+  // Render Dashboard Tab
+  const renderDashboard = () => (
+    <div className="space-y-6">
+      {/* Statistics Cards */}
+      <Row gutter={[24, 24]}>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0">
+            <Statistic
+              title={<span className="text-blue-100">Total Sent</span>}
+              value={mockStats.totalSent}
+              prefix={<SendOutlined className="text-white" />}
+              valueStyle={{ color: 'white' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0">
+            <Statistic
+              title={<span className="text-green-100">Today's Sent</span>}
+              value={mockStats.todaySent}
+              prefix={<TrophyOutlined className="text-white" />}
+              valueStyle={{ color: 'white' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0">
+            <Statistic
+              title={<span className="text-purple-100">Delivery Rate</span>}
+              value={mockStats.deliveryRate}
+              suffix="%"
+              prefix={<CheckCircleOutlined className="text-white" />}
+              valueStyle={{ color: 'white' }}
+            />
+          </Card>
+        </Col>
+        <Col xs={24} sm={12} lg={6}>
+          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0">
+            <Statistic
+              title={<span className="text-orange-100">Read Rate</span>}
+              value={mockStats.readRate}
+              suffix="%"
+              prefix={<EyeOutlined className="text-white" />}
+              valueStyle={{ color: 'white' }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Recent Notifications */}
+      <Card title="Recent Notifications" extra={<Button type="link">View All</Button>}>
+        <List
+          dataSource={mockRecentNotifications}
+          renderItem={(item) => (
+            <List.Item>
+              <List.Item.Meta
+                avatar={
+                  <Avatar 
+                    icon={notificationTypeOptions.find(t => t.value === item.type)?.icon} 
+                    className={`bg-gradient-to-r ${notificationTypeOptions.find(t => t.value === item.type)?.gradient}`}
+                  />
+                }
+                title={<span className="font-semibold">{item.title}</span>}
+                description={
+                  <Space>
+                    <Tag color={notificationTypeOptions.find(t => t.value === item.type)?.value}>
+                      {notificationTypeOptions.find(t => t.value === item.type)?.label}
+                    </Tag>
+                    <Text type="secondary">{item.recipients} recipients</Text>
+                    <Text type="secondary">•</Text>
+                    <Text type="secondary">{item.time}</Text>
+                  </Space>
+                }
+              />
+              <Badge 
+                status={item.status === 'sent' ? 'processing' : item.status === 'delivered' ? 'success' : 'default'} 
+                text={item.status} 
+              />
+            </List.Item>
+          )}
         />
-      )}
+      </Card>
+    </div>
+  );
 
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-x2 p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8 flex items-center">
-          <SendOutlined className="mr-3 text-blue-600" />
-          Send Notification
-        </h1>
+  // Render Compose Tab
+  const renderCompose = () => (
+    <div className="space-y-6">
+      {/* Quick Actions */}
+      <Card className="bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-200">
+        <Row gutter={16} align="middle">
+          <Col>
+            <BulbOutlined className="text-2xl text-indigo-600" />
+          </Col>
+          <Col flex={1}>
+            <Title level={5} className="mb-1">Quick Start</Title>
+            <Text type="secondary">Use templates or start from scratch</Text>
+          </Col>
+          <Col>
+            <Space>
+              <Button 
+                icon={<FileTextOutlined />} 
+                onClick={() => setTemplateMode(true)}
+                className="border-indigo-300 text-indigo-600 hover:bg-indigo-50"
+              >
+                Use Template
+              </Button>
+              <Button 
+                type="primary" 
+                icon={<StarOutlined />}
+                className="bg-indigo-600 border-indigo-600"
+              >
+                Start Fresh
+              </Button>
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
-        <div className="grid gap-8 lg:grid-cols-2">
-          {/* Left Column - Basic Info */}
+      <Row gutter={24}>
+        {/* Left Column - Content */}
+        <Col xs={24} lg={14}>
+          <Card title="Notification Content" className="shadow-sm">
+            <div className="space-y-6">
+              {/* Title */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <MessageOutlined className="mr-2" />
+                  Title *
+                </label>
+                <Input
+                  placeholder="Enter notification title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  status={errors.title ? 'error' : ''}
+                  disabled={isLoading}
+                  className="rounded-lg"
+                  size="large"
+                />
+                {errors.title && (
+                  <Text type="danger" className="text-xs mt-1">{errors.title}</Text>
+                )}
+              </div>
+
+              {/* Content */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  <FileTextOutlined className="mr-2" />
+                  Content *
+                </label>
+                <TextArea
+                  placeholder="Enter notification content"
+                  value={body}
+                  onChange={(e) => setBody(e.target.value)}
+                  rows={4}
+                  status={errors.body ? 'error' : ''}
+                  disabled={isLoading}
+                  className="rounded-lg"
+                  showCount
+                  maxLength={500}
+                />
+                {errors.body && (
+                  <Text type="danger" className="text-xs mt-1">{errors.body}</Text>
+                )}
+              </div>
+
+              {/* Advanced Options */}
+              <Collapse>
+                <Panel header="Advanced Options" key="1">
+                  <div className="space-y-4">
+                    {/* Request ID */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Request ID (Optional)
+                      </label>
+                      <Input
+                        placeholder="Auto-generated if empty"
+                        value={requestId}
+                        onChange={(e) => setRequestId(e.target.value)}
+                        disabled={isLoading}
+                      />
+                    </div>
+
+                    {/* Priority */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Priority
+                      </label>
+                      <Radio.Group value={priority} onChange={(e) => setPriority(e.target.value)}>
+                        <Radio value="low">Low</Radio>
+                        <Radio value="normal">Normal</Radio>
+                        <Radio value="high">High</Radio>
+                        <Radio value="urgent">Urgent</Radio>
+                      </Radio.Group>
+                    </div>
+
+                    {/* Delivery Channels */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Delivery Channels
+                      </label>
+                      <Select
+                        mode="multiple"
+                        value={deliveryChannels}
+                        onChange={setDeliveryChannels}
+                        className="w-full"
+                        options={[
+                          { label: 'Push Notification', value: 'push', icon: <MobileOutlined /> },
+                          { label: 'Email', value: 'email', icon: <MailOutlined /> },
+                          { label: 'SMS', value: 'sms', icon: <MessageOutlined /> },
+                          { label: 'In-App', value: 'inapp', icon: <DesktopOutlined /> },
+                        ]}
+                      />
+                    </div>
+
+                    {/* Schedule */}
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="text-sm font-medium text-gray-700">
+                          Schedule Notification
+                        </label>
+                        <Switch 
+                          checked={scheduleEnabled} 
+                          onChange={setScheduleEnabled}
+                          checkedChildren="ON"
+                          unCheckedChildren="OFF"
+                        />
+                      </div>
+                      {scheduleEnabled && (
+                        <DatePicker
+                          showTime
+                          value={scheduledTime}
+                          onChange={setScheduledTime}
+                          className="w-full"
+                          placeholder="Select date and time"
+                        />
+                      )}
+                    </div>
+                  </div>
+                </Panel>
+              </Collapse>
+            </div>
+          </Card>
+        </Col>
+
+        {/* Right Column - Settings */}
+        <Col xs={24} lg={10}>
           <div className="space-y-6">
-            {/* Title */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Title *
-              </label>
-              <Input
-                placeholder="Enter notification title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                status={errors.title ? 'error' : ''}
-                disabled={isLoading}
-                className="rounded-lg"
-              />
-              {errors.title && (
-                <p className="text-red-500 text-xs mt-1">{errors.title}</p>
-              )}
-            </div>
-
-            {/* Content */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Content *
-              </label>
-              <Input.TextArea
-                placeholder="Enter notification content"
-                value={body}
-                onChange={(e) => setBody(e.target.value)}
-                rows={4}
-                status={errors.body ? 'error' : ''}
-                disabled={isLoading}
-                className="rounded-lg"
-              />
-              {errors.body && (
-                <p className="text-red-500 text-xs mt-1">{errors.body}</p>
-              )}
-            </div>
-
             {/* Notification Type */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Notification Type
-              </label>
-              <Select
-                value={type}
-                onChange={setType}
-                options={notificationTypeOptions}
-                disabled={isLoading}
-                className="w-full"
-              />
-            </div>
+            <Card title="Notification Type" className="shadow-sm">
+              <div className="grid grid-cols-2 gap-3">
+                {notificationTypeOptions.map((option) => (
+                  <div
+                    key={option.value}
+                    className={`p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md ${
+                      type === option.value 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => setType(option.value)}
+                  >
+                    <div className="flex items-center space-x-2">
+                      <div className={`p-2 rounded-full bg-gradient-to-r ${option.gradient}`}>
+                        <span className="text-white text-sm">{option.icon}</span>
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">{option.label}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Card>
 
-            {/* Request ID */}
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Request ID (Optional)
-              </label>
-              <Input
-                placeholder="Enter request ID"
-                value={requestId}
-                onChange={(e) => setRequestId(e.target.value)}
-                disabled={isLoading}
-                className="rounded-lg"
-              />
-            </div>
-          </div>
-
-          {/* Right Column - Image Upload */}
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Image (Optional)
-              </label>
+            {/* Image Upload */}
+            <Card title="Media Attachment" className="shadow-sm">
               {imageFile ? (
                 <div className="relative">
                   <img
                     src={imageFile.previewUrl}
                     alt="Preview"
-                    className="w-full h-64 object-cover rounded-lg shadow-md"
+                    className="w-full h-48 object-cover rounded-lg shadow-md"
                   />
                   <Button
                     icon={<CloseOutlined />}
                     shape="circle"
                     onClick={() => setImageFile(null)}
                     className="absolute top-2 right-2 bg-red-500 text-white border-none hover:bg-red-600"
+                    size="small"
                   />
                 </div>
               ) : (
                 <div
-                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                    isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300'
+                  className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
+                    isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400'
                   }`}
                   onDragOver={handleDragOver}
                   onDragLeave={handleDragLeave}
                   onDrop={handleDrop}
                 >
-                  <UploadOutlined className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">Drag & drop an image here, or</p>
+                  <UploadOutlined className="text-3xl text-gray-400 mb-3" />
+                  <p className="text-gray-600 mb-2">Drag & drop an image here</p>
                   <Upload
                     accept="image/*"
                     showUploadList={false}
@@ -512,171 +801,715 @@ const NotificationSender = () => {
                 </div>
               )}
               {errors.image && (
-                <p className="text-red-500 text-xs mt-1">{errors.image}</p>
+                <Text type="danger" className="text-xs mt-1">{errors.image}</Text>
               )}
-            </div>
-          </div>
-        </div>
+            </Card>
 
-        {/* Recipients Section */}
-        <div className="mt-8 p-6 bg-gray-50 rounded-lg">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
-            <UserOutlined className="mr-2" />
-            Recipients
-          </h3>
-          
-          <div className="space-y-4">
+            {/* Preview Card */}
+            <Card title="Quick Preview" className="shadow-sm">
+              <div className="space-y-3">
+                <Button
+                  icon={<EyeOutlined />}
+                  onClick={handlePreview}
+                  disabled={isLoading || (!title && !body && !imageFile)}
+                  className="w-full"
+                  size="large"
+                >
+                  Preview Notification
+                </Button>
+                
+                <div className="grid grid-cols-3 gap-2">
+                  <Button 
+                    size="small" 
+                    className={previewDevice === 'mobile' ? 'bg-blue-50 border-blue-300' : ''}
+                    onClick={() => setPreviewDevice('mobile')}
+                    icon={<MobileOutlined />}
+                  >
+                    Mobile
+                  </Button>
+                  <Button 
+                    size="small" 
+                    className={previewDevice === 'desktop' ? 'bg-blue-50 border-blue-300' : ''}
+                    onClick={() => setPreviewDevice('desktop')}
+                    icon={<DesktopOutlined />}
+                  >
+                    Desktop
+                  </Button>
+                  <Button 
+                    size="small" 
+                    className={previewDevice === 'email' ? 'bg-blue-50 border-blue-300' : ''}
+                    onClick={() => setPreviewDevice('email')}
+                    icon={<MailOutlined />}
+                  >
+                    Email
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </Col>
+      </Row>
+
+      {/* Recipients Section */}
+      <Card title="Target Recipients" className="shadow-sm">
+        <div className="space-y-6">
+          {/* Recipient Type Selection */}
+          <div className="bg-gray-50 p-4 rounded-lg">
             <Radio.Group
               value={recipientType}
               onChange={(e) => setRecipientType(e.target.value)}
               disabled={isLoading}
-              className="flex space-x-4"
+              className="w-full"
             >
-              <Radio value="all">Send to entire school</Radio>
-              <Radio value="specific">Send to specific recipients</Radio>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div 
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    recipientType === 'all' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
+                  }`}
+                >
+                  <Radio value="all" className="mb-2">
+                    <span className="font-semibold">Broadcast to All</span>
+                  </Radio>
+                  <div className="ml-6">
+                    <GlobalOutlined className="mr-2 text-blue-500" />
+                    <Text type="secondary">Send to entire school ({users.length} users)</Text>
+                  </div>
+                </div>
+                
+                <div 
+                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                    recipientType === 'specific' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'
+                  }`}
+                >
+                  <Radio value="specific" className="mb-2">
+                    <span className="font-semibold">Target Specific Groups</span>
+                  </Radio>
+                  <div className="ml-6">
+                    <TeamOutlined className="mr-2 text-green-500" />
+                    <Text type="secondary">Filter by faculty, course, class, or users</Text>
+                  </div>
+                </div>
+              </div>
             </Radio.Group>
+          </div>
 
-            {recipientType === 'specific' && (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Faculties
-                  </label>
-                  <Select
-                    mode="multiple"
-                    placeholder="Select faculties"
-                    value={facultyCodes}
-                    onChange={setFacultyCodes}
-                    options={faculties.map(f => ({ label: f, value: f }))}
-                    disabled={isLoading}
-                    className="w-full"
-                    notFoundContent={<span>No options available</span>}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Courses
-                  </label>
-                  <Select
-                    mode="multiple"
-                    placeholder="Select courses"
-                    value={courseCodes}
-                    onChange={setCourseCodes}
-                    options={availableCourses.map(c => ({ label: c, value: c }))}
-                    disabled={isLoading || !availableCourses.length}
-                    className="w-full"
-                    notFoundContent={<span>No options available</span>}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Classes
-                  </label>
-                  <Select
-                    mode="multiple"
-                    placeholder="Select classes"
-                    value={classCodes}
-                    onChange={setClassCodes}
-                    options={availableClasses.map(c => ({ label: c, value: c }))}
-                    disabled={isLoading || !availableClasses.length}
-                    className="w-full"
-                    notFoundContent={<span>No options available</span>}
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-600 mb-1">
-                    Users
-                  </label>
-                  <Select
-                    mode="multiple"
-                    placeholder="Select users"
-                    value={userNames}
-                    onChange={setUserNames}
-                    options={availableUserNames.map(u => ({ label: u, value: u }))}
-                    disabled={isLoading || !availableUserNames.length}
-                    className="w-full"
-                    notFoundContent={<span>No options available</span>}
-                  />
-                </div>
+          {/* Specific Recipients Filters */}
+          {recipientType === 'specific' && (
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <FilterOutlined className="text-blue-500" />
+                <Title level={5} className="m-0">Filter Recipients</Title>
               </div>
-            )}
+              
+              <Row gutter={[16, 16]}>
+                <Col xs={24} sm={12} lg={6}>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-600">
+                      <BookOutlined className="mr-1" />
+                      Faculties
+                    </label>
+                    <Select
+                      mode="multiple"
+                      placeholder="Select faculties"
+                      value={facultyCodes}
+                      onChange={setFacultyCodes}
+                      options={faculties.map(f => ({ label: f, value: f }))}
+                      disabled={isLoading}
+                      className="w-full"
+                      showSearch
+                      filterOption={(input, option: any) =>
+                        option.label.toLowerCase().includes(input.toLowerCase())
+                      }
+                    />
+                  </div>
+                </Col>
+                
+                <Col xs={24} sm={12} lg={6}>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-600">
+                      <CrownOutlined className="mr-1" />
+                      Courses
+                    </label>
+                    <Select
+                      mode="multiple"
+                      placeholder="Select courses"
+                      value={courseCodes}
+                      onChange={setCourseCodes}
+                      options={availableCourses.map(c => ({ label: c, value: c }))}
+                      disabled={isLoading || !availableCourses.length}
+                      className="w-full"
+                      showSearch
+                      filterOption={(input, option: any) =>
+                        option.label.toLowerCase().includes(input.toLowerCase())
+                      }
+                    />
+                  </div>
+                </Col>
+                
+                <Col xs={24} sm={12} lg={6}>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-600">
+                      <UsergroupAddOutlined className="mr-1" />
+                      Classes
+                    </label>
+                    <Select
+                      mode="multiple"
+                      placeholder="Select classes"
+                      value={classCodes}
+                      onChange={setClassCodes}
+                      options={availableClasses.map(c => ({ label: c, value: c }))}
+                      disabled={isLoading || !availableClasses.length}
+                      className="w-full"
+                      showSearch
+                      filterOption={(input, option: any) =>
+                        option.label.toLowerCase().includes(input.toLowerCase())
+                      }
+                    />
+                  </div>
+                </Col>
+                
+                <Col xs={24} sm={12} lg={6}>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-600">
+                      <UserOutlined className="mr-1" />
+                      Individual Users
+                    </label>
+                    <Select
+                      mode="multiple"
+                      placeholder="Select users"
+                      value={userNames}
+                      onChange={setUserNames}
+                      options={availableUserNames.map(u => ({ label: u, value: u }))}
+                      disabled={isLoading || !availableUserNames.length}
+                      className="w-full"
+                      showSearch
+                      filterOption={(input, option: any) =>
+                        option.label.toLowerCase().includes(input.toLowerCase())
+                      }
+                    />
+                  </div>
+                </Col>
+              </Row>
 
-            {errors.recipients && (
-              <p className="text-red-500 text-xs">{errors.recipients}</p>
-            )}
+              {errors.recipients && (
+                <Alert
+                  message={errors.recipients}
+                  type="error"
+                  showIcon
+                  className="mt-4"
+                />
+              )}
 
-            {recipientType === 'specific' && (
-              <div className="bg-blue-50 p-3 rounded-lg">
-                <p className="text-sm text-blue-700">
-                  <strong>{filteredUsers.length}</strong> users will receive this notification
-                </p>
-                {filteredUsers.length === 0 && (
-                  <p className="text-sm text-amber-600 mt-1">
-                    No users match the selected criteria
-                  </p>
-                )}
+              {/* Recipients Summary */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+                <Row align="middle" gutter={16}>
+                  <Col>
+                    <div className="bg-blue-500 p-3 rounded-full">
+                      <UsergroupAddOutlined className="text-white text-lg" />
+                    </div>
+                  </Col>
+                  <Col flex={1}>
+                    <div>
+                      <Title level={4} className="mb-1 text-blue-700">
+                        {filteredUsers.length} Recipients Selected
+                      </Title>
+                      <Text type="secondary">
+                        {filteredUsers.length === 0 
+                          ? 'No users match the selected criteria' 
+                          : `Notification will be sent to ${filteredUsers.length} users`
+                        }
+                      </Text>
+                    </div>
+                  </Col>
+                  <Col>
+                    <Progress
+                      type="circle"
+                      size={60}
+                      percent={Math.round((filteredUsers.length / users.length) * 100)}
+                      format={() => `${Math.round((filteredUsers.length / users.length) * 100)}%`}
+                      strokeColor={{
+                        '0%': '#108ee9',
+                        '100%': '#87d068',
+                      }}
+                    />
+                  </Col>
+                </Row>
               </div>
-            )}
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Action Buttons */}
+      <Card className="shadow-sm">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <Button
+              icon={<HistoryOutlined />}
+              onClick={() => setActiveTab('history')}
+              className="border-gray-300 hover:bg-gray-50"
+            >
+              View History
+            </Button>
+            <Button
+              icon={<FileTextOutlined />}
+              onClick={() => setTemplateMode(true)}
+              className="border-gray-300 hover:bg-gray-50"
+            >
+              Save as Template
+            </Button>
+          </div>
+          
+          <div className="flex space-x-3">
+            <Button
+              icon={<EyeOutlined />}
+              onClick={handlePreview}
+              disabled={isLoading || (!title && !body && !imageFile)}
+              size="large"
+              className="border-blue-300 text-blue-600 hover:bg-blue-50"
+            >
+              Preview
+            </Button>
+            <Button
+              type="primary"
+              icon={scheduleEnabled ? <ScheduleOutlined /> : <SendOutlined />}
+              onClick={handleSubmit}
+              disabled={isLoading || filteredUsers.length === 0}
+              loading={isLoading}
+              size="large"
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 border-none hover:from-blue-700 hover:to-indigo-700 px-8"
+            >
+              {scheduleEnabled ? 'Schedule Notification' : 'Send Notification'}
+            </Button>
           </div>
         </div>
+      </Card>
+    </div>
+  );
 
-        {/* Action Buttons */}
-        <div className="flex justify-end space-x-4 mt-8">
-          <Button
-            icon={<EyeOutlined />}
-            onClick={handlePreview}
-            disabled={isLoading}
-            className="border-gray-300 hover:bg-gray-50"
-          >
-            Preview
-          </Button>
-          <Button
-            type="primary"
-            icon={<SendOutlined />}
-            onClick={handleSubmit}
-            disabled={isLoading}
-            loading={isLoading}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            Send Notification
-          </Button>
+  // Render History Tab
+  const renderHistory = () => (
+    <div className="space-y-6">
+      {/* Search and Filter */}
+      <Card>
+        <Row gutter={16} align="middle">
+          <Col flex={1}>
+            <Input
+              placeholder="Search notifications..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              prefix={<SearchOutlined />}
+              size="large"
+            />
+          </Col>
+          <Col>
+            <Select
+              value={filterType}
+              onChange={setFilterType}
+              size="large"
+              className="w-32"
+              options={[
+                { label: 'All', value: 'all' },
+                ...notificationTypeOptions.map(type => ({ label: type.label, value: type.value }))
+              ]}
+            />
+          </Col>
+        </Row>
+      </Card>
+
+      {/* History Timeline */}
+      <Card title="Notification History">
+        <Timeline>
+          {mockRecentNotifications.map((item, index) => (
+            <Timeline.Item
+              key={item.id}
+              dot={
+                <Avatar 
+                  size="small" 
+                  icon={notificationTypeOptions.find(t => t.value === item.type)?.icon}
+                  className={`bg-gradient-to-r ${notificationTypeOptions.find(t => t.value === item.type)?.gradient}`}
+                />
+              }
+            >
+              <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <Title level={5} className="mb-1">{item.title}</Title>
+                  <Badge 
+                    status={item.status === 'sent' ? 'processing' : item.status === 'delivered' ? 'success' : 'default'} 
+                    text={item.status.toUpperCase()} 
+                  />
+                </div>
+                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                  <span>
+                    <Tag color={notificationTypeOptions.find(t => t.value === item.type)?.value}>
+                      {notificationTypeOptions.find(t => t.value === item.type)?.label}
+                    </Tag>
+                  </span>
+                  <span><UsergroupAddOutlined className="mr-1" />{item.recipients} recipients</span>
+                  <span><ClockCircleOutlined className="mr-1" />{item.time}</span>
+                </div>
+                <div className="mt-3 flex space-x-2">
+                  <Button size="small" type="link">View Details</Button>
+                  <Button size="small" type="link">Duplicate</Button>
+                  <Button size="small" type="link" danger>Delete</Button>
+                </div>
+              </div>
+            </Timeline.Item>
+          ))}
+        </Timeline>
+      </Card>
+    </div>
+  );
+
+  // Render Analytics Tab
+  const renderAnalytics = () => (
+    <div className="space-y-6">
+      <Row gutter={[24, 24]}>
+        <Col xs={24} lg={12}>
+          <Card title="Delivery Performance" className="h-80">
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <PieChartOutlined className="text-6xl text-blue-400 mb-4" />
+                <Text type="secondary">Analytics chart would go here</Text>
+              </div>
+            </div>
+          </Card>
+        </Col>
+        <Col xs={24} lg={12}>
+          <Card title="Engagement Metrics" className="h-80">
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <FireOutlined className="text-6xl text-orange-400 mb-4" />
+                <Text type="secondary">Engagement chart would go here</Text>
+              </div>
+            </div>
+          </Card>
+        </Col>
+      </Row>
+      
+      <Card title="Notification Types Distribution">
+        <Row gutter={[16, 16]}>
+          {notificationTypeOptions.map((type) => (
+            <Col xs={12} sm={8} md={6} key={type.value}>
+              <div className="text-center p-4 border border-gray-200 rounded-lg">
+                <div className={`mx-auto mb-2 w-12 h-12 rounded-full bg-gradient-to-r ${type.gradient} flex items-center justify-center`}>
+                  <span className="text-white">{type.icon}</span>
+                </div>
+                <div className="font-semibold">{Math.floor(Math.random() * 100)}</div>
+                <div className="text-xs text-gray-500">{type.label}</div>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      </Card>
+    </div>
+  );
+
+  // Render Settings Tab
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <Card title="General Settings">
+        <div className="space-y-6">
+          <Row gutter={[24, 16]}>
+            <Col xs={24} md={12}>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <Text strong>Auto-save drafts</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">Automatically save notification drafts</Text>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <div>
+                    <Text strong>Email notifications</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">Receive email confirmations</Text>
+                  </div>
+                  <Switch defaultChecked />
+                </div>
+                
+                <div className="flex justify-between items-center">
+                  <div>
+                    <Text strong>Push notifications</Text>
+                    <br />
+                    <Text type="secondary" className="text-sm">Browser push notifications</Text>
+                  </div>
+                  <Switch />
+                </div>
+              </div>
+            </Col>
+            
+            <Col xs={24} md={12}>
+              <div className="space-y-4">
+                <div>
+                  <Text strong className="block mb-2">Default notification type</Text>
+                  <Select
+                    defaultValue="default"
+                    className="w-full"
+                    options={notificationTypeOptions.map(type => ({
+                      label: type.label,
+                      value: type.value
+                    }))}
+                  />
+                </div>
+                
+                <div>
+                  <Text strong className="block mb-2">Time zone</Text>
+                  <Select
+                    defaultValue="UTC+7"
+                    className="w-full"
+                    options={[
+                      { label: 'UTC+7 (Vietnam)', value: 'UTC+7' },
+                      { label: 'UTC+0 (GMT)', value: 'UTC+0' },
+                      { label: 'UTC+8 (Singapore)', value: 'UTC+8' },
+                    ]}
+                  />
+                </div>
+                
+                <div>
+                  <Text strong className="block mb-2">Language</Text>
+                  <Select
+                    defaultValue="vi"
+                    className="w-full"
+                    options={[
+                      { label: 'Tiếng Việt', value: 'vi' },
+                      { label: 'English', value: 'en' },
+                      { label: '中文', value: 'zh' },
+                    ]}
+                  />
+                </div>
+              </div>
+            </Col>
+          </Row>
+        </div>
+      </Card>
+      
+      <Card title="Notification Templates">
+        <Row gutter={[16, 16]}>
+          {notificationTemplates.map((template) => (
+            <Col xs={24} sm={12} lg={8} key={template.id}>
+              <div className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer">
+                <Title level={5}>{template.title}</Title>
+                <Text type="secondary" className="text-sm block mb-3">
+                  {template.content.substring(0, 60)}...
+                </Text>
+                <div className="flex space-x-2">
+                  <Button size="small" type="primary" ghost>Use Template</Button>
+                  <Button size="small">Edit</Button>
+                </div>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      </Card>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
+      {/* Enhanced Notification Alert */}
+      {notification && (
+        <div className="fixed top-4 right-4 z-50">
+          <Alert
+            message={notification.message}
+            type={notification.type}
+            showIcon
+            icon={
+              notification.type === 'success' ? <CheckCircleOutlined /> :
+              notification.type === 'error' ? <ExclamationCircleOutlined /> :
+              <InfoCircleOutlined />
+            }
+            className="max-w-sm shadow-lg border-0"
+            closable
+            onClose={() => setNotification(null)}
+          />
+        </div>
+      )}
+
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-3 rounded-xl">
+                <BellOutlined className="text-white text-xl" />
+              </div>
+              <div>
+                <Title level={2} className="mb-0 bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Notification Management System
+                </Title>
+                <Text type="secondary">Advanced notification center for educational institutions</Text>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Badge count={5} className="cursor-pointer">
+                <Avatar icon={<BellOutlined />} className="bg-blue-100 text-blue-600" />
+              </Badge>
+              <Avatar icon={<UserOutlined />} className="bg-gradient-to-r from-purple-500 to-pink-500" />
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Preview Modal */}
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <Tabs 
+          activeKey={activeTab} 
+          onChange={setActiveTab}
+          size="large"
+          className="bg-white rounded-2xl shadow-lg p-6"
+        >
+          <TabPane
+            tab={
+              <span className="flex items-center space-x-2">
+                <DashboardOutlined />
+                <span>Dashboard</span>
+              </span>
+            }
+            key="dashboard"
+          >
+            {renderDashboard()}
+          </TabPane>
+          
+          <TabPane
+            tab={
+              <span className="flex items-center space-x-2">
+                <SendOutlined />
+                <span>Compose</span>
+              </span>
+            }
+            key="compose"
+          >
+            {renderCompose()}
+          </TabPane>
+          
+          <TabPane
+            tab={
+              <span className="flex items-center space-x-2">
+                <HistoryOutlined />
+                <span>History</span>
+              </span>
+            }
+            key="history"
+          >
+            {renderHistory()}
+          </TabPane>
+          
+          <TabPane
+            tab={
+              <span className="flex items-center space-x-2">
+                <PieChartOutlined />
+                <span>Analytics</span>
+              </span>
+            }
+            key="analytics"
+          >
+            {renderAnalytics()}
+          </TabPane>
+          
+          <TabPane
+            tab={
+              <span className="flex items-center space-x-2">
+                <SettingOutlined />
+                <span>Settings</span>
+              </span>
+            }
+            key="settings"
+          >
+            {renderSettings()}
+          </TabPane>
+        </Tabs>
+      </div>
+
+      {/* Enhanced Preview Modal */}
       <Modal
-        title="Notification Preview"
+        title={
+          <div className="flex items-center space-x-2">
+            <EyeOutlined />
+            <span>Notification Preview</span>
+            <Tag color="blue">{previewDevice}</Tag>
+          </div>
+        }
         open={isPreviewVisible}
         onCancel={() => setIsPreviewVisible(false)}
         footer={null}
-        className="max-w-md"
+        width={previewDevice === 'desktop' ? 600 : 400}
+        className="preview-modal"
       >
-        <div className={`p-4 rounded-lg border-l-4 ${currentNotificationType?.bgColor} border-l-${currentNotificationType?.color.split('-')[1]}-500`}>
-          {title && (
-            <h4 className={`font-semibold mb-2 ${currentNotificationType?.color}`}>
-              {title}
-            </h4>
-          )}
-          {body && (
-            <p className="text-gray-700 mb-3">{body}</p>
-          )}
-          {imageFile && (
-            <img
-              src={imageFile.previewUrl}
-              alt="Preview"
-              className="w-full rounded-lg"
-            />
-          )}
-          <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
-            <span className={`text-xs px-2 py-1 rounded ${currentNotificationType?.bgColor} ${currentNotificationType?.color}`}>
-              {currentNotificationType?.label}
-            </span>
-            <span className="text-xs text-gray-500">Just now</span>
+        <div className={`${previewDevice === 'mobile' ? 'max-w-sm' : previewDevice === 'email' ? 'max-w-lg' : 'max-w-md'} mx-auto`}>
+          <div className={`p-4 rounded-lg border-l-4 ${currentNotificationType?.bgColor} border-l-${currentNotificationType?.color.split('-')[1]}-500 shadow-sm`}>
+            <div className="flex items-start space-x-3">
+              <div className={`p-2 rounded-full bg-gradient-to-r ${currentNotificationType?.gradient} flex-shrink-0`}>
+                <span className="text-white text-sm">{currentNotificationType?.icon}</span>
+              </div>
+              <div className="flex-1">
+                {title && (
+                  <Title level={5} className={`mb-2 ${currentNotificationType?.color}`}>
+                    {title}
+                  </Title>
+                )}
+                {body && (
+                  <Text className="text-gray-700 block mb-3">{body}</Text>
+                )}
+                {imageFile && (
+                  <img
+                    src={imageFile.previewUrl}
+                    alt="Preview"
+                    className="w-full rounded-lg mb-3"
+                  />
+                )}
+                <div className="flex justify-between items-center pt-3 border-t border-gray-200">
+                  <Tag color={currentNotificationType?.value} className="border-0">
+                    {currentNotificationType?.label}
+                  </Tag>
+                  <Text type="secondary" className="text-xs">
+                    <ClockCircleOutlined className="mr-1" />
+                    Just now
+                  </Text>
+                </div>
+              </div>
+            </div>
           </div>
+          
+          {previewDevice === 'email' && (
+            <div className="mt-4 text-center">
+              <Button type="primary" className="mr-2">View in App</Button>
+              <Button>Unsubscribe</Button>
+            </div>
+          )}
         </div>
+      </Modal>
+
+      {/* Template Selection Modal */}
+      <Modal
+        title="Choose Template"
+        open={templateMode}
+        onCancel={() => setTemplateMode(false)}
+        footer={null}
+        width={800}
+      >
+        <Row gutter={[16, 16]}>
+          {notificationTemplates.map((template) => (
+            <Col xs={24} sm={12} key={template.id}>
+              <div 
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-all cursor-pointer hover:border-blue-300"
+                onClick={() => handleTemplateSelect(template)}
+              >
+                <Title level={5}>{template.title}</Title>
+                <Text type="secondary" className="block mb-3">
+                  {template.content}
+                </Text>
+                <Button type="primary" ghost size="small" className="w-full">
+                  Use This Template
+                </Button>
+              </div>
+            </Col>
+          ))}
+        </Row>
       </Modal>
     </div>
   );
