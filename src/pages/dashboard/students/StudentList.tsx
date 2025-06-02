@@ -1,19 +1,20 @@
+import { Card, Spin } from 'antd';
+import { AlertCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Card, Table, Tag, Spin } from 'antd';
-import StudentEmpty from './StudentEmpty';
-import StudentDetail from './StudentDetail';
+import { useDispatch, useSelector } from 'react-redux';
 import StudentFilter from '../../../components/StudentFilter';
 import {
   getStudents,
+  selectIsLoaded,
+  selectStudentsError,
   selectStudentsFiltered,
   selectStudentsLoading,
-  selectStudentsError,
-  selectIsLoaded,
 } from '../../../store/slices/studentSlice';
-import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '../../../store/store';
 import { UserInfo } from '../../../types/User';
-import { AlertCircle } from 'lucide-react';
+import StudentDetail from './StudentDetail';
+import StudentEmpty from './StudentEmpty';
+import StudentTable from './StudentTable';
 
 const StudentList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -52,43 +53,7 @@ const StudentList: React.FC = () => {
     }
   };
 
-  const columns = [
-    {
-      title: 'Mã SV',
-      dataIndex: 'userName',
-      key: 'userName',
-    },
-    {
-      title: 'Họ tên',
-      key: 'fullName',
-      render: (_: any, record: UserInfo) =>
-        `${record.lastName} ${record.firstName}`.trim(),
-    },
-    {
-      title: 'Email',
-      dataIndex: 'email',
-      key: 'email',
-    },
-    {
-      title: 'Lớp',
-      dataIndex: 'className',
-      key: 'className',
-    },
-    {
-      title: 'Giới tính',
-      dataIndex: 'gender',
-      key: 'gender',
-      render: (gender: number) => (gender === 1 ? 'Nam' : 'Nữ'),
-    },
-    {
-      title: 'Trạng thái',
-      dataIndex: 'status',
-      key: 'status',
-      render: (status: string) => (
-        <Tag color={status === 'Active' ? 'green' : 'red'}>{status}</Tag>
-      ),
-    },
-  ];
+
 
   if (isLoading && students.length === 0) {
     return (
@@ -118,16 +83,7 @@ const StudentList: React.FC = () => {
         ) : (
           <div className="flex gap-6 mt-6">
             <div className="flex-1 bg-white p-4 rounded-lg shadow-md border">
-              <Table
-                className="hover:cursor-pointer"
-                columns={columns}
-                dataSource={students}
-                rowKey="userName"
-                pagination={{ pageSize: 8 }}
-                onRow={(record: UserInfo) => ({
-                  onClick: () => handleViewDetail(record.userName),
-                })}
-              />
+              <StudentTable students={students} onClickAction={handleViewDetail}/>
             </div>
             <div className="w-1/3 bg-white p-6 rounded-lg shadow-md border">
               {currentStudent ? (

@@ -7,9 +7,6 @@ const StudentAdd: React.FC = () => {
     const handleAdd = () => {
         setOpen(true);
       };
-    const handleImportCSV = () =>{
-        
-    }
     return (
         <>
             <Button type="primary" onClick={handleAdd}  className="mb-4 bg-primary-500 hover:bg-primary-600 text-white border-none">

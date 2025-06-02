@@ -1,75 +1,66 @@
-import React, { useState, useEffect, JSX } from 'react';
-import type { FixedType } from 'rc-table/lib/interface';
-import { 
-  Layout, 
-  Menu, 
-  Button, 
-  Table, 
-  Card, 
-  Statistic, 
-  Tag, 
-  Modal, 
-  Input, 
-  Select, 
-  InputNumber,
-  Space,
-  Row,
-  Col,
-  Tabs,
-  Avatar,
-  Dropdown,
-  notification,
-  Progress,
-  Badge,
-  DatePicker,
-  Divider,
-  Form,
-  Switch,
-  Upload,
-  List,
-  Timeline,
-  Descriptions,
-  Alert,
-  Empty
-} from 'antd';
 import {
-  DashboardOutlined,
-  UserOutlined,
-  DollarOutlined,
-  FileTextOutlined,
-  SettingOutlined,
+  BankOutlined,
+  BarChartOutlined,
   BellOutlined,
-  SearchOutlined,
-  PlusOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  EyeOutlined,
-  DownloadOutlined,
-  MenuFoldOutlined,
-  MenuUnfoldOutlined,
+  CalendarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
-  ExclamationCircleOutlined,
-  BookOutlined,
-  TeamOutlined,
-  WalletOutlined,
-  BarChartOutlined,
-  CalendarOutlined,
-  PhoneOutlined,
-  MailOutlined,
-  BankOutlined,
   CreditCardOutlined,
-  PrinterOutlined,
+  DashboardOutlined,
+  DeleteOutlined,
+  DollarOutlined,
+  DownloadOutlined,
+  EditOutlined,
+  ExclamationCircleOutlined,
+  EyeOutlined,
+  FileTextOutlined,
   FilterOutlined,
-  UploadOutlined,
   InfoCircleOutlined,
   LogoutOutlined,
-  UserSwitchOutlined,
-  SafetyOutlined,
-  GlobalOutlined,
-  NotificationOutlined,
-  QuestionCircleOutlined
+  MailOutlined,
+  MenuFoldOutlined,
+  MenuUnfoldOutlined,
+  PhoneOutlined,
+  PlusOutlined,
+  PrinterOutlined,
+  QuestionCircleOutlined,
+  SettingOutlined,
+  TeamOutlined,
+  UserOutlined
 } from '@ant-design/icons';
+import {
+  Alert,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Col,
+  DatePicker,
+  Descriptions,
+  Divider,
+  Dropdown,
+  Empty,
+  Form,
+  Input,
+  InputNumber,
+  Layout,
+  List,
+  Menu,
+  Modal,
+  notification,
+  Progress,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Switch,
+  Table,
+  Tabs,
+  Tag,
+  Timeline
+} from 'antd';
+import type { FixedType } from 'rc-table/lib/interface';
+import React, { JSX, useState } from 'react';
 
 const { Header, Content, Sider } = Layout;
 const { Option } = Select;
@@ -216,7 +207,7 @@ const TuitionManagementSystem = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [students, setStudents] = useState(mockStudents);
   const [payments, setPayments] = useState(mockPayments);
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications] = useState(mockNotifications);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState('');
@@ -225,8 +216,7 @@ const TuitionManagementSystem = () => {
   const [form] = Form.useForm();
   const [viewModalVisible, setViewModalVisible] = useState(false);
   
-  // Form state
-  const [formData, setFormData] = useState({});
+ 
 
   // Statistics
   const totalStudents = students.length;
@@ -831,7 +821,7 @@ const TuitionManagementSystem = () => {
                   title: 'Thao tác',
                   key: 'action',
                   width: 150,
-                  render: (_, record) => (
+                  render: (_) => (
                     <Space size="small">
                       <Button icon={<EyeOutlined />} size="small" title="Xem biên lai" />
                       <Button icon={<PrinterOutlined />} size="small" type="primary" title="In biên lai" />

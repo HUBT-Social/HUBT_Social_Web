@@ -1,36 +1,34 @@
 import React from 'react';
-import { useRoutes, RouteObject, Navigate } from 'react-router-dom';
-import HomePage from '../pages/home/HomePage';
+import { RouteObject, useRoutes } from 'react-router-dom';
+import ColorTestPage from '../components/ColorTest';
+import Layout from '../components/Layout';
+//import { extractTokenInfo } from '../helper/extratoken';
+import NotFoundPage from '../pages/404/NotFoundPage';
 import LoginPage from '../pages/auth/LoginPage';
 import SignUpPage from '../pages/auth/SignUpPage';
-import NotFoundPage from '../pages/404/NotFoundPage';
-import DashboadPage from '../pages/dashboard/DashboadPage';
-import SettingsPage from '../pages/dashboard/SettingsPage';
-import Layout from '../components/Layout';
-import ColorTestPage from '../components/ColorTest';
-import {
-  TeacherLayout,
-  TeacherIndex,
-  TeacherDetailPage
-} from '../pages/dashboard/teachers/index';
-import StudentsLayout from '../pages/dashboard/students';
-import StudentList from '../pages/dashboard/students/StudentList';
-import { userFromStorage } from '../helper/tokenHelper';
-import { extractTokenInfo } from '../helper/extratoken';
-import NotificationSelector from '../pages/dashboard/notification/NotificationSelecter';
-import ExamManagement from '../pages/dashboard/exams';
-import SettingAndProfile from '../pages/dashboard/settings';
 import BillLayout from '../pages/dashboard/billing';
+import DashboadPage from '../pages/dashboard/DashboadPage';
+import PracticeTestManagement from '../pages/dashboard/exams/PracticeTestManagement';
 import TeaturesLayout from '../pages/dashboard/features';
 import NotificationLayout from '../pages/dashboard/notification';
 import NotificationScreen from '../pages/dashboard/notification/NotificationScreen';
-import SendAcademicNotificationScreen from '../pages/dashboard/notification/SendAcademicNotificationScreen';
+import NotificationSystem from '../pages/dashboard/notification/NotificationSystem';
+import EnhancedNotificationSystem from '../pages/dashboard/notification/SendAcademicNotificationScreen';
+import SettingAndProfile from '../pages/dashboard/settings';
+import StudentsLayout from '../pages/dashboard/students';
+import StudentList from '../pages/dashboard/students/StudentList';
+import {
+  TeacherDetailPage,
+  TeacherIndex,
+  TeacherLayout
+} from '../pages/dashboard/teachers/index';
+import HomePage from '../pages/home/HomePage';
 
 // Hàm kiểm tra token còn hạn hay không
-const availableToken = (): boolean => {
-  const userToken = extractTokenInfo();
-  return userToken !== null && !userToken.isExpired;
-};
+// const availableToken = (): boolean => {
+//   const userToken = extractTokenInfo();
+//   return userToken !== null && !userToken.isExpired;
+// };
 
 // Component bảo vệ route
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -81,14 +79,14 @@ const privateRoutes: RouteObject[] = [
         element: React.createElement(NotificationLayout),
         children: [
           { index: true, element: React.createElement(NotificationScreen) },
-          { path: 'condition', element: React.createElement(NotificationSelector)},
-          { path: 'academic', element: React.createElement(SendAcademicNotificationScreen)},
+          { path: 'condition', element: React.createElement(NotificationSystem)},
+          { path: 'academic', element: React.createElement(EnhancedNotificationSystem)},
           { path: '*', element: React.createElement(NotFoundPage) },
         ],
       },
       { path: 'settings', element: React.createElement(SettingAndProfile) },
       { path: 'billing', element: React.createElement(BillLayout) },
-      { path: 'exams', element: React.createElement(ExamManagement) },
+      { path: 'exams', element: React.createElement(PracticeTestManagement) },
       { path: 'features', element: React.createElement(TeaturesLayout) },
     ],
   },

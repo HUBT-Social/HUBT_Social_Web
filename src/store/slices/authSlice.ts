@@ -57,7 +57,7 @@ export const loginRequest = createAsyncThunk<
   { rejectValue: string }
 >('auth/login', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await instance.post(AUTH_ENDPOINTS.POST_SIGN_IN, JSON.stringify(credentials));
+    const response = await instance.withoutAuth().post(AUTH_ENDPOINTS.POST_SIGN_IN, JSON.stringify(credentials));
     return response.data as LoginResponse;
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
@@ -69,15 +69,16 @@ export const getInfoUser = createAsyncThunk<
   UserState,
   { accessToken: string },
   { rejectValue: string }
->('auth/getInfoUser', async ({ accessToken }, { rejectWithValue }) => {
+>('auth/getInfoUser', async ({ }, { rejectWithValue }) => {
   try {
-    const response = await instance.get<UserState>(USER_ENDPOINTS.GET_USER, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data;
+    // const response = await instance.get<UserState>(USER_ENDPOINTS.GET_USER, {
+    //   headers: {
+    //     Authorization: `Bearer ${accessToken}`,
+    //     'Content-Type': 'application/json',
+    //   },
+    // });
+    const response = await instance.get<UserState>(USER_ENDPOINTS.GET_USER);
+    return response;
   } catch (error: any) {
     const errorMessage =
       error.response?.data?.message ||

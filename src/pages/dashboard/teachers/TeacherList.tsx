@@ -1,21 +1,20 @@
-import React, { useEffect, useMemo } from 'react';
-import { Card, Spin, Table, Tag } from 'antd';
-import { useNavigate } from 'react-router-dom';
+import { Card, Spin } from 'antd';
+import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import type { AppDispatch } from '../../../store/store';
 
-import TeacherEmpty from './TeacherEmpty';
 import {
-  selectTeachersFiltered,
-  selectTeachersError,
-  selectTeachersLoading,
-  selectIsLoaded,
   getTeachers,
+  selectIsLoaded,
+  selectTeachersError,
+  selectTeachersFiltered,
+  selectTeachersLoading,
 } from '../../../store/slices/teacherSlice';
+import TeacherEmpty from './TeacherEmpty';
 
-import moment from 'moment';
 import { AlertCircle } from 'lucide-react';
-import { UserInfo } from '../../../types/User';
+import TeacherTable from './TeacherTable';
 
 const TeacherList: React.FC = () => {
   const navigate = useNavigate();
@@ -52,51 +51,6 @@ const TeacherList: React.FC = () => {
     navigate(`/dashboard/teachers/${id}`);
   };
 
-  const columns = useMemo(
-    () => [
-      {
-        title: 'Tên giáo viên',
-        key: 'fullName',
-        render: (_: any, record: UserInfo) =>
-          `${record.lastName} ${record.firstName}`.trim(),
-      },
-      {
-        title: 'Email',
-        dataIndex: 'email',
-        key: 'email',
-      },
-      {
-        title: 'Số điện thoại',
-        dataIndex: 'phoneNumber',
-        key: 'phoneNumber',
-      },
-      {
-        title: 'Giới tính',
-        dataIndex: 'gender',
-        key: 'gender',
-        render: (gender: number) => (gender === 1 ? 'Nam' : 'Nữ'),
-      },
-      {
-        title: 'Ngày sinh',
-        dataIndex: 'dateOfBirth',
-        key: 'dateOfBirth',
-        render: (dob: string) =>
-          dob && dob !== '0001-01-01T00:00:00'
-            ? moment(dob).format('DD/MM/YYYY')
-            : 'Chưa cập nhật',
-      },
-      {
-        title: 'Trạng thái',
-        dataIndex: 'status',
-        key: 'status',
-        render: (status: string) => (
-          <Tag color={status === 'Active' ? 'green' : 'red'}>{status}</Tag>
-        ),
-      },
-    ],
-    []
-  );
-
   if (loading && teacherFiltered.length === 0) {
     return (
       <Card title="Danh sách giáo viên">
@@ -121,14 +75,7 @@ const TeacherList: React.FC = () => {
       {teacherFiltered.length === 0 ? (
         <TeacherEmpty />
       ) : (
-        <Table
-          columns={columns}
-          dataSource={teacherFiltered}
-          rowKey="userName"
-          onRow={(record: UserInfo) => ({
-            onClick: () => handleViewDetail(record.userName),
-          })}
-        />
+        <TeacherTable teachers={teacherFiltered} onClickAction={handleViewDetail}/>
       )}
     </Card>
   );

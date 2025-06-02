@@ -287,3 +287,40 @@ export interface SortOptions {
 // ================================
 // Export all interfaces for easy importing
 // ================================
+export interface NotificationFormValues {
+  notificationType: string;
+  priority: 'low' | 'medium' | 'high';
+  schedule?: any;
+  channel: string[];
+  customMessage?: string;
+}
+
+export interface Recipient {
+  key: string;
+  name: string;
+  faculty: string;
+  class: string;
+  gpa: number;
+  absences: number;
+  status: string;
+  email: string;
+  phone: string;
+}
+
+export interface NotificationHistory {
+  id: string;
+  type: string;
+  priority: string;
+  recipients: string[];
+  timestamp: string;
+  readRate: number;
+  deliveryStatus: 'sent' | 'delivered' | 'failed';
+  channels: string[];
+}
+
+export interface SavedGroup {
+  name: string;
+  keys: React.Key[];
+  description?: string;
+  createdAt: string;
+}

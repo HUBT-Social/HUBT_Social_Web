@@ -1,8 +1,7 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import instance from '../../config/axios';
-import { RootState } from '../store';
-import { NOTIFICATION_ENDPOINT } from '../../services/endpoints';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import axios from 'axios';
+import { NOTIFICATION_ENDPOINT } from '../../services/endpoints';
+import { RootState } from '../store';
 
 // Valid notification types
 export enum NotificationType {

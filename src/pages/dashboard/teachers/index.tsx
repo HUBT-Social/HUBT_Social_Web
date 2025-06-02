@@ -1,10 +1,10 @@
 // teacher/index.tsx
-import React, { useEffect, useRef } from 'react';
-import { Outlet } from 'react-router-dom';
 import { Layout } from 'antd';
-import TeacherList from './TeacherList';
-import TeacherDetail from './TeacherDetail';
+import React from 'react';
+import { Outlet } from 'react-router-dom';
 import TeacherFilter from '../../../components/TeacherFilter';
+import TeacherDetail from './TeacherDetail';
+import TeacherList from './TeacherList';
 //import { teachers as fakeTeachers } from '../../../assets/fake_data/teachers';
 
 const { Content } = Layout;
@@ -35,7 +35,5 @@ const TeacherIndex: React.FC = () => <TeacherList />;
 const TeacherDetailPage: React.FC = () => <TeacherDetail />;
 
 export {
-  TeacherLayout,
-  TeacherIndex,
-  TeacherDetailPage
+  TeacherDetailPage, TeacherIndex, TeacherLayout
 };

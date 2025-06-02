@@ -16,7 +16,7 @@ const TeacherFilter: React.FC = () => {
   const [genderFilter, setGenderFilter] = useState<number | null>(-1);
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  const [filteredTeachers, setfilteredTeachers] = useState<UserInfo[]>(teachers);
+  const [, setfilteredTeachers] = useState<UserInfo[]>(teachers);
 
   useEffect(() => {
     applyFilters();

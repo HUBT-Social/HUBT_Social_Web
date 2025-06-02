@@ -1,45 +1,36 @@
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
-import { 
-  Button, 
-  Drawer, 
-  Select, 
-  Table, 
-  Tag, 
-  Typography, 
-  message, 
-  DatePicker, 
-  Input, 
-  Switch,
-  Card,
-  Statistic,
-  Progress,
-  Badge,
-  Space,
-  Divider,
-  Alert
-} from 'antd';
-import { 
-  SendOutlined, 
-  SearchOutlined, 
-  SaveOutlined, 
-  ClockCircleOutlined,
-  UserOutlined,
+import {
   BellOutlined,
   HistoryOutlined,
-  TeamOutlined
+  SaveOutlined,
+  SendOutlined,
+  TeamOutlined,
+  UserOutlined
 } from '@ant-design/icons';
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  DatePicker,
+  Divider,
+  Drawer,
+  Input,
+  Progress,
+  Select,
+  Space,
+  Statistic,
+  Switch,
+  Table,
+  Tag,
+  Typography,
+  message
+} from 'antd';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
 
-interface NotificationFormValues {
-  notificationType: string;
-  priority: 'low' | 'medium' | 'high';
-  schedule?: any;
-  channel: string[];
-  customMessage?: string;
-}
 
 interface Recipient {
   key: string;

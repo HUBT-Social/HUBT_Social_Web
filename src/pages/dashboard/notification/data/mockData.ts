@@ -1,0 +1,590 @@
+import { 
+  CalendarOutlined, 
+  WarningOutlined, 
+  MessageOutlined, 
+  ClockCircleOutlined,
+  ThunderboltOutlined,
+  CheckCircleOutlined,
+  InfoCircleOutlined,
+  BellOutlined
+} from '@ant-design/icons';
+import type { FC } from 'react';
+import type { IconComponentProps } from '@ant-design/icons/lib/components/Icon';
+import { UserInfo } from '../../../../types/User';
+
+// Define the type for Ant Design icons
+type AntDesignIcon = FC<IconComponentProps>;
+
+// Define types for notification type options
+interface NotificationTypeOption {
+  value: string;
+  label: string;
+  color: string;
+  bgColor: string;
+  icon: AntDesignIcon;
+  gradient: string;
+}
+
+// Define types for notifications (consistent with NotificationProvider.tsx)
+interface Notification {
+  id: number;
+  title: string;
+  body: string;
+  type: string;
+  recipients: number;
+  time: string;
+  status: string;
+}
+
+// Define types for statistics
+interface Stats {
+  totalSent: number;
+  todaySent: number;
+  deliveryRate: number;
+  readRate: number;
+  monthlyTrend: number[];
+  typeDistribution: {
+    [key: string]: number;
+  };
+}
+
+
+// Define types for notification templates
+interface Template {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+}
+
+// Mock notification types with enhanced styling
+export const notificationTypeOptions: NotificationTypeOption[] = [
+  { value: 'default', label: 'Default', color: 'text-gray-600', bgColor: 'bg-gray-100', icon: BellOutlined, gradient: 'from-gray-400 to-gray-600' },
+  { value: 'event', label: 'Event', color: 'text-blue-600', bgColor: 'bg-blue-100', icon: CalendarOutlined, gradient: 'from-blue-400 to-blue-600' },
+  { value: 'warning', label: 'Warning', color: 'text-red-600', bgColor: 'bg-red-100', icon: WarningOutlined, gradient: 'from-red-400 to-red-600' },
+  { value: 'announcement', label: 'Announcement', color: 'text-green-600', bgColor: 'bg-green-100', icon: MessageOutlined, gradient: 'from-green-400 to-green-600' },
+  { value: 'reminder', label: 'Reminder', color: 'text-yellow-600', bgColor: 'bg-yellow-100', icon: ClockCircleOutlined, gradient: 'from-yellow-400 to-yellow-600' },
+  { value: 'urgent', label: 'Urgent', color: 'text-purple-600', bgColor: 'bg-purple-100', icon: ThunderboltOutlined, gradient: 'from-purple-400 to-purple-600' },
+  { value: 'success', label: 'Success', color: 'text-emerald-600', bgColor: 'bg-emerald-100', icon: CheckCircleOutlined, gradient: 'from-emerald-400 to-emerald-600' },
+  { value: 'info', label: 'Information', color: 'text-cyan-600', bgColor: 'bg-cyan-100', icon: InfoCircleOutlined, gradient: 'from-cyan-400 to-cyan-600' },
+];
+
+// Mock data for notifications history
+export const mockRecentNotifications: Notification[] = [
+  { id: 1, title: 'Welcome to new semester', body: 'Welcome to the Fall 2025 semester! We hope you have a productive and enjoyable academic term.', type: 'announcement', recipients: 1250, time: '2 hours ago', status: 'sent' },
+  { id: 2, title: 'Assignment due reminder', body: 'This is a reminder that your CS101 assignment is due tomorrow at midnight.', type: 'reminder', recipients: 350, time: '1 day ago', status: 'delivered' },
+  { id: 3, title: 'Emergency maintenance', body: 'The campus network will be down for emergency maintenance tonight from 2-4 AM.', type: 'urgent', recipients: 2500, time: '2 days ago', status: 'read' },
+  { id: 4, title: 'Sports event registration', body: 'Registration for the annual inter-faculty sports tournament is now open. Please register by Friday.', type: 'event', recipients: 800, time: '3 days ago', status: 'sent' },
+  { id: 5, title: 'Library hours update', body: 'The library will now be open 24/7 during exam week to accommodate student needs.', type: 'info', recipients: 1800, time: '4 days ago', status: 'delivered' },
+  { id: 6, title: 'Scholarship application', body: 'Applications for the Merit Scholarship program are due next week.', type: 'default', recipients: 500, time: '5 days ago', status: 'read' },
+];
+
+// Mock data for statistics
+export const mockStats: Stats = {
+  totalSent: 15420,
+  todaySent: 45,
+  deliveryRate: 98.5,
+  readRate: 76.3,
+  monthlyTrend: [120, 150, 200, 180, 250, 300, 280, 350, 400, 380, 450, 500],
+  typeDistribution: {
+    default: 15,
+    event: 25,
+    warning: 10,
+    announcement: 20,
+    reminder: 15,
+    urgent: 5,
+    success: 5,
+    info: 5
+  }
+};
+
+// Mock data for users with className format [A-Z]+(\d).(\d)
+export const mockUsers: UserInfo[] = [
+  {
+    "id": "1a1b2c3d-0001-0000-0000-000000000001",
+    "userName": "8888888881",
+    "email": "le.quang@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/men/11.jpg",
+    "phoneNumber": "0901234001",
+    "firstName": "Quang",
+    "lastName": "Le",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 1,
+    "dateOfBirth": "1985-04-20T00:00:00",
+    "className": "TH27.25"
+  },
+  {
+    "id": "1a1b2c3d-0002-0000-0000-000000000002",
+    "userName": "8888888882",
+    "email": "nguyen.thao@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/women/12.jpg",
+    "phoneNumber": "0911234002",
+    "firstName": "Thao",
+    "lastName": "Nguyen",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 0,
+    "dateOfBirth": "1990-03-15T00:00:00",
+    "className": "TD27.87"
+  },
+  {
+    "id": "1a1b2c3d-0003-0000-0000-000000000003",
+    "userName": "8888888883",
+    "email": "minh.chau@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/women/13.jpg",
+    "phoneNumber": "0921234003",
+    "firstName": "Minh",
+    "lastName": "Chau",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 0,
+    "dateOfBirth": "1988-01-10T00:00:00",
+    "className": "KT28.15"
+  },
+  {
+    "id": "1a1b2c3d-0004-0000-0000-000000000004",
+    "userName": "8888888884",
+    "email": "tuan.anh@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/men/14.jpg",
+    "phoneNumber": "0931234004",
+    "firstName": "Tuan",
+    "lastName": "Anh",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 1,
+    "dateOfBirth": "1992-06-25T00:00:00",
+    "className": "CN29.42"
+  },
+  {
+    "id": "1a1b2c3d-0005-0000-0000-000000000005",
+    "userName": "8888888885",
+    "email": "bao.tran@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/women/15.jpg",
+    "phoneNumber": "0941234005",
+    "firstName": "Bao",
+    "lastName": "Tran",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 0,
+    "dateOfBirth": "1987-09-08T00:00:00",
+    "className": "QT26.33"
+  },
+  {
+    "id": "1a1b2c3d-0006-0000-0000-000000000006",
+    "userName": "8888888886",
+    "email": "son.le@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/men/16.jpg",
+    "phoneNumber": "0951234006",
+    "firstName": "Son",
+    "lastName": "Le",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 1,
+    "dateOfBirth": "1980-12-01T00:00:00",
+    "className": "TH27.26"
+  },
+  {
+    "id": "1a1b2c3d-0007-0000-0000-000000000007",
+    "userName": "8888888887",
+    "email": "thanh.ha@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/women/17.jpg",
+    "phoneNumber": "0961234007",
+    "firstName": "Thanh",
+    "lastName": "Ha",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 0,
+    "dateOfBirth": "1989-11-30T00:00:00",
+    "className": "TD27.88"
+  },
+  {
+    "id": "1a1b2c3d-0008-0000-0000-000000000008",
+    "userName": "8888888888",
+    "email": "khoa.pham@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/men/18.jpg",
+    "phoneNumber": "0971234008",
+    "firstName": "Khoa",
+    "lastName": "Pham",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 1,
+    "dateOfBirth": "1986-05-17T00:00:00",
+    "className": "KT28.16"
+  },
+  {
+    "id": "1a1b2c3d-0009-0000-0000-000000000009",
+    "userName": "8888888889",
+    "email": "mai.hoang@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/women/19.jpg",
+    "phoneNumber": "0981234009",
+    "firstName": "Mai",
+    "lastName": "Hoang",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 0,
+    "dateOfBirth": "1991-02-22T00:00:00",
+    "className": "CN29.43"
+  },
+  {
+    "id": "1a1b2c3d-0010-0000-0000-000000000010",
+    "userName": "8888888890",
+    "email": "viet.nguyen@university.edu",
+    "avataUrl": "https://randomuser.me/api/portraits/men/20.jpg",
+    "phoneNumber": "0991234010",
+    "firstName": "Viet",
+    "lastName": "Nguyen",
+    "fcmToken": "",
+    "status": "active",
+    "gender": 1,
+    "dateOfBirth": "1984-08-12T00:00:00",
+    "className": "QT26.34"
+  },
+  {
+    "id": "11b3450c-6fc1-43ed-9a4a-a4398f119938",
+    "userName": "admin",
+    "email": "hubtsocial1996@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1732549977/jgldr2myysd7u6vx6sfy.jpg",
+    "phoneNumber": "0857551767",
+    "firstName": "Phan",
+    "lastName": "Bình Dương đẹp trai vãi cứt",
+    "fcmToken": "cjDcFBIuTTm_DVe8D1q-Fv:APA91bE_Vr2N22wma89Qq3okUL7yCUgmbQ0saEf80QSH97U_9Fa2qrCK1WORtIKRoX1u1Oix6pD-Dsf4LeQzJm_NReKt1RV-G5IfPYGao9bd4jNazlbIW0Q",
+    "status": "",
+    "gender": 0,
+    "dateOfBirth": "0001-01-01T00:00:00Z",
+    "className": "TH27.27"
+  },
+  {
+    "id": "1c87fce9-c067-4ae0-9709-c8217fec2680",
+    "userName": "DangAdmin",
+    "email": "bachaidang19082004@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811930/b6oi4predbmtbqnf2gi4.jpg",
+    "phoneNumber": "0123333332",
+    "firstName": "Anh",
+    "lastName": "Dep Trai",
+    "fcmToken": "dZG1UkXITjypT2bhSh7LaP:APA91bHcHNbM7rNHJcC2S0NCg_EIyJcX5KBNSRACoXdhU1yEzfXkkCIU1UI2ViNAAbeCVvXW2--dgldzj0xUVwNz7A_2myEWTzRNWLGbhVEfMyRsHWYmo1w",
+    "status": "",
+    "gender": 2,
+    "dateOfBirth": "2025-02-16T09:27:25.348Z",
+    "className": "TD27.89"
+  },
+  {
+    "id": "979b4a25-79e9-4c06-af59-72bb8ee7affe",
+    "userName": "haiha4242",
+    "email": "haiha4242@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1732549977/jgldr2myysd7u6vx6sfy.jpg",
+    "phoneNumber": null,
+    "firstName": "string",
+    "lastName": "string",
+    "fcmToken": "cRCJwFUnS_W_84i5f8kvLb:APA91bFJwShVy0rkRWZ-M57fDJTalExQabPki1qmH-jAtuxBwpXIHzXOi4aygFWD94eIHlSf34CgjfuAAVHRLm9nVacxEBh8F-P_xO1IubUvocij-ertj6w",
+    "status": "",
+    "gender": 0,
+    "dateOfBirth": "0001-01-01T00:00:00Z",
+    "className": "KT28.17"
+  },
+  {
+    "id": "54ef2a96-dd03-4e5e-b1cf-963deaa57a2e",
+    "userName": "DangAdmin2",
+    "email": "vuvandang2k004@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1732549977/jgldr2myysd7u6vx6sfy.jpg",
+    "phoneNumber": null,
+    "firstName": "",
+    "lastName": "",
+    "fcmToken": "",
+    "status": "",
+    "gender": 0,
+    "dateOfBirth": "0001-01-01T00:00:00Z",
+    "className": "CN29.44"
+  },
+  {
+    "id": "1d344f0b-ab2e-4c49-93e3-3cf3c50a4b59",
+    "userName": "TruongITE6",
+    "email": "thetruongit1236@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1732549977/jgldr2myysd7u6vx6sfy.jpg",
+    "phoneNumber": null,
+    "firstName": "",
+    "lastName": "",
+    "fcmToken": "c8zMBaKFRnSewIKUDDh7Uv:APA91bHz5aKhNK1WeABxWp9QOVAzQHCUz--6ZnKxlicT8Y1kDTc6rMU2NUgKdkkuA-E0b3ceca5MXKMWfi10e_DsLn-yv7h3V7UDR4maTQlHDHxp6YdxeMU",
+    "status": "",
+    "gender": 0,
+    "dateOfBirth": "0001-01-01T00:00:00Z",
+    "className": "QT26.35"
+  },
+  {
+    "id": "4088af5f-fa88-4b3b-82c0-4e082b81324b",
+    "userName": "TheTruongITE6",
+    "email": "kakaka123hust@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811971/ihaipmgkzjyfliavkq3e.jpg",
+    "phoneNumber": "0949201573",
+    "firstName": "TTIT",
+    "lastName": "E6",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2004-02-15T00:00:00Z",
+    "className": "TH27.28"
+  },
+  {
+    "id": "5832285b-11d4-4a6f-901a-5ee02478dadf",
+    "userName": "Duonghb1577",
+    "email": "Duonghb1577@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811992/lbkn7ehp5aqdpkjkqzgf.jpg",
+    "phoneNumber": "0857551767",
+    "firstName": "Binh Duong",
+    "lastName": "Phan",
+    "fcmToken": "f8e68DsUQPuzcEdexhLxce:APA91bHh_ijSkqo_WCm8T9lueMFQUDf13nqEoVUfjjJDzGVIb_66Xhrbq8eXWzUtaZM51vMJztkNHP6qOdaSuiijHIAW7EjzRdV6gYLkEWAY5POOtgssJnE",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2004-04-08T00:00:00Z",
+    "className": "TD27.90"
+  },
+  {
+    "id": "be86ac04-d80b-4e71-977d-7c8b369b5c01",
+    "userName": "vungochaiha",
+    "email": "vungochaiha@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1732549977/jgldr2myysd7u6vx6sfy.jpg",
+    "phoneNumber": null,
+    "firstName": "",
+    "lastName": "",
+    "fcmToken": "ftMIuI3HSJC1ujDhxUQzLN:APA91bGtxqbIz6iJHwXyIzo3fN_ZqrZ-BjKUQ-V2catAl4Kash4oGyx2Ouqp8XHETKkEYsyvpWsQ46YORiiBh21inKYKyulzI5AQpzngJU4EHbmlV0txe2Q",
+    "status": "",
+    "gender": 0,
+    "dateOfBirth": "0001-01-01T00:00:00Z",
+    "className": "KT28.18"
+  },
+  {
+    "id": "9fe978bb-6fae-4d49-a9f6-e740aaefc31c",
+    "userName": "Duonghb1",
+    "email": "Duonghb123@example.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1732549977/jgldr2myysd7u6vx6sfy.jpg",
+    "phoneNumber": null,
+    "firstName": "",
+    "lastName": "",
+    "fcmToken": "",
+    "status": "",
+    "gender": 0,
+    "dateOfBirth": "0001-01-01T00:00:00Z",
+    "className": "CN29.45"
+  },
+  {
+    "id": "25195685-832e-4642-8245-f79f4d9c2c66",
+    "userName": "Sayhi1601",
+    "email": "anhduc16012004@gmail.com",
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811992/lbkn7ehp5aqdpkjkqzgf.jpg",
+    "phoneNumber": "0974626601",
+    "firstName": "Nguyen Anh",
+    "lastName": "Duc",
+    "fcmToken": "c_ZE3_NKQ6ihHo4lRvMlcy:APA91bEHKFJKNo9Elo9s1l0MPCa1TReZA-KzWvGC_coW-eEa9V3yOcI0_rEdfIKbtSRBehxpVAiGiLR6Jk7KO9d7SozNX5dKz8ya0NfdPxoHFvSOeuNlla8",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2004-01-16T00:00:00Z",
+    "className": "QT26.36"
+  },
+  {
+    "id": "dc580040-abef-4b67-ab41-2fee0cfedc04",
+    "userName": "14106392",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812010/fjt3fwuqk53lnb910qvu.jpg",
+    "phoneNumber": null,
+    "firstName": "Văn Thành",
+    "lastName": "Nguyễn",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "1996-02-19T17:00:00Z",
+    "className": "TH27.29"
+  },
+  {
+    "id": "dc7530f7-7e55-4aee-bc3a-42c5e1cacbcc",
+    "userName": "17104085",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811992/lbkn7ehp5aqdpkjkqzgf.jpg",
+    "phoneNumber": null,
+    "firstName": "Tuấn Anh",
+    "lastName": "Dương",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "1999-08-10T17:00:00Z",
+    "className": "TD27.91"
+  },
+  {
+    "id": "15198628-7c46-4361-bb84-74d031c97304",
+    "userName": "17113334",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812010/fjt3fwuqk53lnb910qvu.jpg",
+    "phoneNumber": null,
+    "firstName": "Thế Khương",
+    "lastName": "Bùi",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "1999-10-04T17:00:00Z",
+    "className": "KT28.19"
+  },
+  {
+    "id": "caf62a43-fc61-43e3-b7fd-49a180802372",
+    "userName": "17120595",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811971/ihaipmgkzjyfliavkq3e.jpg",
+    "phoneNumber": null,
+    "firstName": "Việt Hoàng",
+    "lastName": "Nguyễn",
+    "fcmToken": "cKFsTRAyQsW00v1wruXv3M:APA91bHnYc63vWRF3FCUwkZWYvZa6ub95SZlBjhJySJ9c6iz-DIhH6UlX67JfNZbjh--6C9MPVDrEaG0NT0nzhHyg9vEbcOhsftG6PB_NFrUyoP7uhQ4K_0",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "1999-06-16T17:00:00Z",
+    "className": "CN29.46"
+  },
+  {
+    "id": "6afc3837-dffa-4a99-8335-bd393efec069",
+    "userName": "18100653",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812010/fjt3fwuqk53lnb910qvu.jpg",
+    "phoneNumber": null,
+    "firstName": "Tấn Dũng",
+    "lastName": "Nguyễn",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2000-11-19T17:00:00Z",
+    "className": "QT26.37"
+  },
+  {
+    "id": "ea1af1f3-d1f5-43e9-bf48-6aac4b6b06d5",
+    "userName": "18109776",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811930/b6oi4predbmtbqnf2gi4.jpg",
+    "phoneNumber": null,
+    "firstName": "Thị Huyền Trang",
+    "lastName": "Lê",
+    "fcmToken": "",
+    "status": "",
+    "gender": 2,
+    "dateOfBirth": "2000-11-19T17:00:00Z",
+    "className": "TH27.30"
+  },
+  {
+    "id": "0fccf4e6-c847-4b2c-a81c-ad97643e31da",
+    "userName": "18114710",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811992/lbkn7ehp5aqdpkjkqzgf.jpg",
+    "phoneNumber": null,
+    "firstName": "Tiến Hiệp",
+    "lastName": "Lê",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2000-02-16T17:00:00Z",
+    "className": "TD27.92"
+  },
+  {
+    "id": "5eed9b2b-3c32-4dbd-8e05-2fee85d8ff33",
+    "userName": "19125752",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812010/fjt3fwuqk53lnb910qvu.jpg",
+    "phoneNumber": null,
+    "firstName": "Minh Tuấn",
+    "lastName": "Nguyễn",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2001-03-04T17:00:00Z",
+    "className": "KT28.20"
+  },
+  {
+    "id": "67ada22e-7ea9-4623-acec-3636a63cf1e2",
+    "userName": "19125763",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812037/txbbmvgtpyhnleij7g1s.jpg",
+    "phoneNumber": null,
+    "firstName": "Tiến Đạt",
+    "lastName": "Nguyễn",
+    "fcmToken": "eYEgbG2sScyOdczFXkL3dg:APA91bENxPh0iLcurhWIvxZGloAFc-gnAZtrV9hbUVXibl33i0RLK1SA2gkMYtAH3cpR94FjV0QCrAMFWzdOrNpkoWM_q33ylXhGEC1urTiXbleWmzdwlHw",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2001-09-24T17:00:00Z",
+    "className": "CN29.47"
+  },
+  {
+    "id": "e9d2e499-d499-4097-ac27-ee38e088af68",
+    "userName": "19130700",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812010/fjt3fwuqk53lnb910qvu.jpg",
+    "phoneNumber": null,
+    "firstName": "Quốc Toản",
+    "lastName": "Trần",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2001-08-10T17:00:00Z",
+    "className": "QT26.38"
+  },
+  {
+    "id": "fc229ae9-5989-4136-85d6-d6c5402086ac",
+    "userName": "19135192",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811992/lbkn7ehp5aqdpkjkqzgf.jpg",
+    "phoneNumber": null,
+    "firstName": "Ngọc Sơn",
+    "lastName": "Vũ",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2001-01-04T17:00:00Z",
+    "className": "TH27.31"
+  },
+  {
+    "id": "f749e757-56e8-4d1e-9c20-b408a886073f",
+    "userName": "19135213",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731811890/migfj5wqjmk4v6jeuada.jpg",
+    "phoneNumber": null,
+    "firstName": "Thị Ánh",
+    "lastName": "Nguyễn",
+    "fcmToken": "cKFsTRAyQsW00v1wruXv3M:APA91bHnYc63vWRF3FCUwkZWYvZa6ub95SZlBjhJySJ9c6iz-DIhH6UlX67JfNZbjh--6C9MPVDrEaG0NT0nzhHyg9vEbcOhsftG6PB_NFrUyoP7uhQ4K_0",
+    "status": "",
+    "gender": 2,
+    "dateOfBirth": "2001-05-10T17:00:00Z",
+    "className": "TD27.93"
+  },
+  {
+    "id": "3c59fd09-6425-4fde-8226-04907cad811f",
+    "userName": "19135332",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812010/fjt3fwuqk53lnb910qvu.jpg",
+    "phoneNumber": null,
+    "firstName": "Trung Nguyên",
+    "lastName": "Lê",
+    "fcmToken": "cHymNXXeSEaIH85WhX9EzU:APA91bFU_Gfww9XpK_SwwDYb3QdwWRjAVA5Vazpf23hapGcDxkoLi_RzEQZDAb-Rh9rYLevoheUcPpyCDE3cV0aIJy1uQ3wXMvn0Nd-ANiY7YQdV4Wp6FhE",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2001-12-15T17:00:00Z",
+    "className": "KT28.21"
+  },
+  {
+    "id": "8034220f-832f-4a22-8fe4-78e53afdb916",
+    "userName": "19135682",
+    "email": null,
+    "avataUrl": "https://res.cloudinary.com/dnx8aew1t/image/upload/v1731812010/fjt3fwuqk53lnb910qvu.jpg",
+    "phoneNumber": null,
+    "firstName": "Anh Tuấn",
+    "lastName": "Lê",
+    "fcmToken": "",
+    "status": "",
+    "gender": 1,
+    "dateOfBirth": "2001-08-11T17:00:00Z",
+    "className": "CN29.48"
+  }
+];
+
+
+// Mock notification templates
+export const mockTemplates: Template[] = [
+  { id: 'welcome', title: 'Welcome Message', content: 'Welcome to our platform! We\'re excited to have you here.', type: 'default' },
+  { id: 'reminder', title: 'Assignment Reminder', content: 'Don\'t forget about your upcoming assignment due date.', type: 'reminder' },
+  { id: 'event', title: 'Event Announcement', content: 'Join us for an exciting event happening soon!', type: 'event' },
+  { id: 'maintenance', title: 'Maintenance Notice', content: 'System maintenance will be performed during off-peak hours.', type: 'warning' },
+  { id: 'congratulations', title: 'Congratulations', content: 'Congratulations on your recent achievement!', type: 'success' },
+  { id: 'emergency', title: 'Emergency Alert', content: 'Please be advised of an important emergency announcement.', type: 'urgent' },
+];

@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import { BellOutlined, MenuOutlined } from '@ant-design/icons';
 import { Badge, Button, Dropdown, List, Modal, Typography } from 'antd';
-import { BellOutlined, ExclamationCircleOutlined, MenuOutlined } from '@ant-design/icons';
+import React, { useState } from 'react';
 
 const { Title, Text } = Typography;
 
@@ -9,7 +9,7 @@ interface HeaderProps {
   isSidebarOpen: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ onToggleSidebar, isSidebarOpen }) => {
+const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
 
   const notifications = [

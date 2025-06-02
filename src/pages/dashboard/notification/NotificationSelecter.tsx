@@ -1,71 +1,65 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
-  Input,
-  Select,
-  Upload,
-  Button,
-  Modal,
-  Radio,
-  Alert,
-  Card,
-  Tabs,
-  Progress,
-  Badge,
-  Timeline,
-  Statistic,
-  Tooltip,
-  Switch,
-  DatePicker,
-  Space,
-  Divider,
-  Tag,
-  Avatar,
-  List,
-  Typography,
-  Row,
-  Col,
-  Collapse,
-  Tree
-} from 'antd';
-import {
-  UploadOutlined,
-  EyeOutlined,
-  SendOutlined,
-  UserOutlined,
-  CloseOutlined,
-  CheckCircleOutlined,
-  ExclamationCircleOutlined,
-  InfoCircleOutlined,
   BellOutlined,
-  DashboardOutlined,
-  HistoryOutlined,
-  SettingOutlined,
-  UsergroupAddOutlined,
-  PieChartOutlined,
+  BookOutlined,
+  BulbOutlined,
   CalendarOutlined,
+  CheckCircleOutlined,
+  ClockCircleOutlined,
+  CloseOutlined,
+  CrownOutlined,
+  DashboardOutlined,
+  DesktopOutlined,
+  ExclamationCircleOutlined,
+  EyeOutlined,
   FileTextOutlined,
   FilterOutlined,
-  SearchOutlined,
-  ScheduleOutlined,
-  TeamOutlined,
-  GlobalOutlined,
-  WarningOutlined,
-  ThunderboltOutlined,
-  StarOutlined,
-  ClockCircleOutlined,
-  RobotOutlined,
-  MessageOutlined,
-  MailOutlined,
-  MobileOutlined,
-  DesktopOutlined,
-  BulbOutlined,
   FireOutlined,
+  GlobalOutlined,
+  HistoryOutlined,
+  InfoCircleOutlined,
+  MailOutlined,
+  MessageOutlined,
+  MobileOutlined,
+  PieChartOutlined,
+  ScheduleOutlined,
+  SearchOutlined,
+  SendOutlined,
+  SettingOutlined,
+  StarOutlined,
+  TeamOutlined,
+  ThunderboltOutlined,
   TrophyOutlined,
-  HeartOutlined,
-  BookOutlined,
-  CrownOutlined
+  UploadOutlined,
+  UsergroupAddOutlined,
+  UserOutlined,
+  WarningOutlined
 } from '@ant-design/icons';
-import { User } from '../../../types/Notification';
+import {
+  Alert,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  Col,
+  Collapse,
+  DatePicker,
+  Input,
+  List,
+  Modal,
+  Progress,
+  Radio,
+  Row,
+  Select,
+  Space,
+  Statistic,
+  Switch,
+  Tabs,
+  Tag,
+  Timeline,
+  Typography,
+  Upload
+} from 'antd';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const { TextArea } = Input;
 const { TabPane } = Tabs;
@@ -124,7 +118,7 @@ const NotificationSender = () => {
   const [priority, setPriority] = useState('normal');
   const [deliveryChannels, setDeliveryChannels] = useState(['push']);
   const [templateMode, setTemplateMode] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [, setSelectedTemplate] = useState<any>(null);
   const [previewDevice, setPreviewDevice] = useState('mobile');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('all');
@@ -138,7 +132,7 @@ const NotificationSender = () => {
   role: 'student' | 'teacher';
 };
 
-const [users, setUsers] = useState<User[]>([
+const [users] = useState<User[]>([
   {
     userName: 'john_doe',
     className: 'CS2023A',
@@ -394,23 +388,24 @@ const [users, setUsers] = useState<User[]>([
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
-    const payload = {
-      title,
-      body,
-      image: imageFile?.file
-        ? { base64String: imageFile.file, fileName: imageFile.fileName }
-        : null,
-      type,
-      facultyCodes,
-      courseCodes,
-      classCodes,
-      userNames,
-      sendAll: recipientType === 'all',
-      scheduledTime: scheduleEnabled ? scheduledTime : null,
-      priority,
-      deliveryChannels,
-      requestId: requestId || `REQ_${Date.now()}`
-    };
+    // const payload = {
+    //   title,
+    //   body,
+    //   image: imageFile?.file
+    //     ? { base64String: imageFile.file, fileName: imageFile.fileName }
+    //     : null,
+    //   type,
+    //   facultyCodes,
+    //   courseCodes,
+    //   classCodes,
+    //   userNames,
+    //   sendAll: recipientType === 'all',
+    //   scheduledTime: scheduleEnabled ? scheduledTime : null,
+    //   priority,
+    //   deliveryChannels,
+    //   requestId: requestId || `REQ_${Date.now()}`
+    // };
+
 
     setIsLoading(true);
 
@@ -1120,7 +1115,7 @@ const [users, setUsers] = useState<User[]>([
       {/* History Timeline */}
       <Card title="Notification History">
         <Timeline>
-          {mockRecentNotifications.map((item, index) => (
+          {mockRecentNotifications.map((item) => (
             <Timeline.Item
               key={item.id}
               dot={

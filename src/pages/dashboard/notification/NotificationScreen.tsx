@@ -1,28 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Bell, 
-  Send, 
-  Settings, 
-  Users, 
-  BarChart3, 
-  Search, 
-  Filter, 
-  Plus, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  EyeOff, 
-  Calendar, 
-  AlertCircle, 
-  CheckCircle, 
-  Clock, 
-  Mail,
-  X,
-  Menu,
-  Home,
+import {
+  AlertCircle,
+  BarChart3,
+  Bell,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Edit,
+  Eye,
   FileText,
-  User
+  Home,
+  Menu,
+  Plus,
+  Search,
+  Send,
+  Settings,
+  Trash2,
+  User,
+  Users
 } from 'lucide-react';
+import React, { useState } from 'react';
 
 interface Notification {
   id: string;
@@ -53,8 +49,8 @@ const NotificationScreen: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterPriority, setFilterPriority] = useState('all');
   const [selectedNotifications, setSelectedNotifications] = useState<string[]>([]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingNotification, setEditingNotification] = useState<Notification | null>(null);
+  const [, setShowCreateModal] = useState(false);
+  const [, setEditingNotification] = useState<Notification | null>(null);
 
   // Sample data
   const [notifications, setNotifications] = useState<Notification[]>([
