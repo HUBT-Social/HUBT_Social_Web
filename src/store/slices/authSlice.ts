@@ -58,7 +58,11 @@ export const loginRequest = createAsyncThunk<
 >('auth/login', async (credentials, { rejectWithValue }) => {
   try {
     const response = await instance.withoutAuth().post(AUTH_ENDPOINTS.POST_SIGN_IN, JSON.stringify(credentials));
-    return response.data as LoginResponse;
+    const result = response.data  as LoginResponse;
+    if(result.userToken.accessToken){
+      instance.setToken(response?.userToken.accessToken);
+    }
+    return result;
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
     return rejectWithValue(errorMessage);

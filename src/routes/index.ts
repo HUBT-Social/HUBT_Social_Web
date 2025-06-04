@@ -1,5 +1,5 @@
 import React from 'react';
-import { RouteObject, useRoutes } from 'react-router-dom';
+import { Navigate, RouteObject, useRoutes } from 'react-router-dom';
 import ColorTestPage from '../components/ColorTest';
 import Layout from '../components/Layout';
 //import { extractTokenInfo } from '../helper/extratoken';
@@ -23,18 +23,20 @@ import {
   TeacherLayout
 } from '../pages/dashboard/teachers/index';
 import HomePage from '../pages/home/HomePage';
+import { extractTokenInfo } from '../helper/extratoken';
+import { userFromStorage } from '../helper/tokenHelper';
 
-// Hàm kiểm tra token còn hạn hay không
-// const availableToken = (): boolean => {
-//   const userToken = extractTokenInfo();
-//   return userToken !== null && !userToken.isExpired;
-// };
+//Hàm kiểm tra token còn hạn hay không
+const availableToken = (): boolean => {
+  const userToken = extractTokenInfo();
+  return userToken !== null && !userToken.isExpired;
+};
 
 // Component bảo vệ route
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // if (!userFromStorage || !availableToken()) {
-  //   return React.createElement(Navigate, { to: '/login', replace: true });
-  // }
+  if (!userFromStorage || !availableToken()) {
+    return React.createElement(Navigate, { to: '/login', replace: true });
+  }
   return React.createElement(React.Fragment, null, children);
 };
 

@@ -1,481 +1,181 @@
-import axios, {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-  AxiosError,
-  InternalAxiosRequestConfig,
-} from 'axios';
-import { BASE_API_URL } from '../config/env';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import { BASE_API_URL } from './env';
 
 // ==================== TYPES ====================
-
-interface TokenConfig {
-  localStorageKeys: string[];
-  sessionStorageKeys: string[];
-  cookieKeys?: string[];
-  secureCookies?: boolean; // Enable Secure, HttpOnly, SameSite cookies
-}
-
-interface ApiResponse<T = any> {
-  data: T;
-  message?: string;
-  status?: number;
-}
-
 interface ApiError {
   message: string;
-  status: number | any;
+  status?: number;
   errors?: Record<string, string[]>;
 }
 
-type UploadProgressCallback = (progressEvent: ProgressEvent) => void;
-
-interface RequestOptions extends Omit<AxiosRequestConfig, 'headers'> {
-  headers?: Record<string, string>;
+interface RequestOptions extends AxiosRequestConfig {
   skipAuth?: boolean;
-  retries?: number; // Number of retry attempts
 }
 
-type QueryParams = Record<string, string | number | boolean | undefined | null>;
-
-interface RequestConfig {
-  baseURL?: string;
-  timeout?: number;
-  maxRetries?: number;
-}
-
-// ==================== TOKEN MANAGEMENT ====================
-
-const DEFAULT_TOKEN_CONFIG: TokenConfig = {
-  localStorageKeys: ['authToken', 'token', 'accessToken', 'jwt'],
-  sessionStorageKeys: ['authToken', 'token', 'accessToken', 'jwt'],
-  cookieKeys: ['authToken', 'token'],
-  secureCookies: true,
-};
-
+// ==================== TOKEN MANAGER ====================
 class TokenManager {
-  private config: TokenConfig;
   private tokenCache: string | null = null;
-  private refreshPromise: Promise<string | null> | null = null;
+  private isInitialized: boolean = false;
 
-  constructor(config: TokenConfig = DEFAULT_TOKEN_CONFIG) {
-    this.config = config;
-  }
-
-  async getToken(): Promise<string | null> {
-    if (this.tokenCache !== null) {
-      console.debug('Returning cached token');
-      return this.tokenCache;
-    }
-
-    // Prioritize localStorage
-    for (const key of this.config.localStorageKeys) {
-      try {
-        const token = localStorage.getItem(key);
-        if (token && token.trim() && this.isTokenValid(token)) {
-          console.debug(`Token found in localStorage with key: ${key}`);
-          this.tokenCache = token.trim();
-          return this.tokenCache;
-        }
-      } catch (error) {
-        console.warn(`Failed to access localStorage for key ${key}:`, error);
-      }
-    }
-
-    // Try sessionStorage
-    for (const key of this.config.sessionStorageKeys) {
-      try {
-        const token = sessionStorage.getItem(key);
-        if (token && token.trim() && this.isTokenValid(token)) {
-          console.debug(`Token found in sessionStorage with key: ${key}`);
-          this.tokenCache = token.trim();
-          return this.tokenCache;
-        }
-      } catch (error) {
-        console.warn(`Failed to access sessionStorage for key ${key}:`, error);
-      }
-    }
-
-    // Try cookies
-    if (this.config.cookieKeys && typeof document !== 'undefined') {
-      for (const key of this.config.cookieKeys) {
-        try {
-          const token = this.getCookie(key);
-          if (token && token.trim() && this.isTokenValid(token)) {
-            console.debug(`Token found in cookies with key: ${key}`);
-            this.tokenCache = token.trim();
-            return this.tokenCache;
-          }
-        } catch (error) {
-          console.warn(`Failed to access cookie for key ${key}:`, error);
-        }
-      }
-    }
-
-    console.debug('No valid token found');
-    this.tokenCache = null;
-    return null;
-  }
-
-  setToken(token: string, key: string = 'authToken'): void {
+  private initialize(): void {
+    if (this.isInitialized) return;
+    
+    console.log('🔧 TokenManager: Initializing...');
+    
     try {
-      localStorage.setItem(key, token);
-      this.tokenCache = token;
-      console.debug(`Token saved to localStorage with key: ${key}`);
-      if (this.config.secureCookies && this.config.cookieKeys?.includes(key)) {
-        this.setCookie(key, token);
+      if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
+        console.log('❌ TokenManager: localStorage not available');
+        this.tokenCache = null;
+      } else {
+        const token = localStorage.getItem('authToken');
+        this.tokenCache = token?.trim() || null;
+        console.log('📱 TokenManager: Loaded from localStorage:', this.tokenCache ? 'TOKEN_EXISTS' : 'NO_TOKEN');
       }
     } catch (error) {
-      console.warn('Failed to save token to localStorage:', error);
-      try {
-        sessionStorage.setItem(key, token);
-        this.tokenCache = token;
-        console.debug(`Token saved to sessionStorage as fallback with key: ${key}`);
-      } catch (fallbackError) {
-        console.error('Failed to save token to sessionStorage:', fallbackError);
+      console.warn('⚠️ TokenManager: Failed to initialize from localStorage:', error);
+      this.tokenCache = null;
+    }
+    
+    this.isInitialized = true;
+  }
+
+  getToken(): string | null {
+    this.initialize();
+    console.log('🔍 TokenManager.getToken() called, returning:', this.tokenCache ? 'TOKEN_EXISTS' : 'NULL');
+    return this.tokenCache;
+  }
+
+  setToken(token: string): void {
+    console.log('💾 TokenManager.setToken() called with:', token ? 'TOKEN_PROVIDED' : 'EMPTY_TOKEN');
+    
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.setItem('authToken', token);
+        console.log('✅ TokenManager: Saved to localStorage');
       }
+      this.tokenCache = token;
+      this.isInitialized = true;
+      console.log('✅ TokenManager: Token cached in memory');
+    } catch (error) {
+      console.warn('⚠️ TokenManager: Failed to save token:', error);
+      this.tokenCache = token;
     }
   }
 
   clearToken(): void {
-    this.config.localStorageKeys.forEach(key => {
-      try {
-        localStorage.removeItem(key);
-      } catch (error) {
-        console.warn(`Failed to remove ${key} from localStorage:`, error);
+    console.log('🗑️ TokenManager.clearToken() called');
+    
+    try {
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        localStorage.removeItem('authToken');
+        console.log('✅ TokenManager: Removed from localStorage');
       }
-    });
-
-    this.config.sessionStorageKeys.forEach(key => {
-      try {
-        sessionStorage.removeItem(key);
-      } catch (error) {
-        console.warn(`Failed to remove ${key} from sessionStorage:`, error);
-      }
-    });
-
-    if (this.config.cookieKeys && typeof document !== 'undefined') {
-      this.config.cookieKeys.forEach(key => {
-        try {
-          this.setCookie(key, '', -1);
-        } catch (error) {
-          console.warn(`Failed to remove ${key} from cookies:`, error);
-        }
-      });
+      this.tokenCache = null;
+      this.isInitialized = true;
+      console.log('✅ TokenManager: Cleared from memory cache');
+    } catch (error) {
+      console.warn('⚠️ TokenManager: Failed to clear token:', error);
+      this.tokenCache = null;
     }
-
-    this.tokenCache = null;
-    console.debug('All tokens cleared');
   }
 
-  isTokenValid(token: string): boolean {
-    if (!token || token.trim().length === 0) return false;
-
-    const jwtPattern = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-    if (jwtPattern.test(token)) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        if (payload.exp) {
-          const currentTime = Math.floor(Date.now() / 1000);
-          return payload.exp > currentTime + 60; // Consider token invalid 60s before expiry
-        }
-      } catch (error) {
-        console.warn('Failed to decode JWT token:', error);
-      }
-    }
-    return true; // Non-JWT tokens are considered valid
-  }
-
-  async refreshToken(): Promise<string | null> {
-    if (this.refreshPromise) {
-      console.debug('Awaiting existing refresh token promise');
-      return this.refreshPromise;
-    }
-
-    this.refreshPromise = (async () => {
-      try {
-        const refreshResponse = await axios.post<{ token: string }>(
-          `${BASE_API_URL}/refresh`,
-          {},
-          { withCredentials: true }
-        );
-        const newToken = refreshResponse.data.token;
-        this.setToken(newToken);
-        console.debug('Token refreshed successfully');
-        return newToken;
-      } catch (error) {
-        console.error('Failed to refresh token:', error);
-        this.clearToken();
-        return null;
-      } finally {
-        this.refreshPromise = null;
-      }
-    })();
-
-    return this.refreshPromise;
-  }
-
-  private getCookie(name: string): string | null {
-    if (typeof document === 'undefined') return null;
-    const nameEQ = name + '=';
-    const ca = document.cookie.split(';');
-    for (let c of ca) {
-      c = c.trim();
-      if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length);
-    }
-    return null;
-  }
-
-  private setCookie(name: string, value: string, days: number = 7): void {
-    if (typeof document === 'undefined') return;
-    let expires = '';
-    if (days !== -1) {
-      const date = new Date();
-      date.setTime(date.getTime() + days * 24 * 60 * 60 * 1000);
-      expires = `; expires=${date.toUTCString()}`;
-    }
-    const secure = this.config.secureCookies ? '; Secure; HttpOnly; SameSite=Strict' : '';
-    document.cookie = `${name}=${value}${expires}; path=/${secure}`;
+  hasValidToken(): boolean {
+    const token = this.getToken();
+    const isValid = !!(token && token.length > 0);
+    console.log('🔐 TokenManager.hasValidToken():', isValid);
+    return isValid;
   }
 }
 
-// ==================== AXIOS INSTANCE SETUP ====================
-
-const createAxiosInstance = (config: RequestConfig): AxiosInstance => {
-  return axios.create({
-    baseURL: config.baseURL || BASE_API_URL,
-    timeout: config.timeout || 30000,
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    withCredentials: true,
-  });
-};
-
-// ==================== REQUEST WRAPPER CLASS ====================
-
-class RequestWrapper {
+// ==================== API CLIENT ====================
+class ApiClient {
   private instance: AxiosInstance;
   private tokenManager: TokenManager;
-  private maxRetries: number;
 
-  constructor(requestConfig: RequestConfig = {}, tokenConfig?: TokenConfig) {
-    this.instance = createAxiosInstance(requestConfig);
-    this.tokenManager = new TokenManager(tokenConfig);
-    this.maxRetries = requestConfig.maxRetries || 3;
+  constructor(baseURL: string, timeout: number = 30000) {
+    console.log('🚀 ApiClient: Constructor called with baseURL:', baseURL);
+    
+    this.tokenManager = new TokenManager();
+    this.instance = axios.create({
+      baseURL,
+      timeout,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+    });
+
     this.setupInterceptors();
+    console.log('✅ ApiClient: Initialization complete');
   }
-
-  private setupInterceptors(): void {
+  public setUpHeaderBeforeLogin(): void {
     this.instance.interceptors.request.use(
-      async (config: InternalAxiosRequestConfig) => {
-        if (process.env.NODE_ENV !== 'production') {
-          console.debug(`🚀 ${config.method?.toUpperCase()} ${config.url}`);
+      (config) => {
+          const token = this.tokenManager.getToken();
+          if (token) {
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${token}`;
+            console.log('🔑 Request: Added Authorization header');
+          } else {
+            console.log('❌ Request: No token available');
+          }
+        return config;
+      }
+    );
+  }
+  private setupInterceptors(): void {
+    console.log('🔧 ApiClient: Setting up interceptors...');
+    
+    // Request interceptor - add auth token
+    this.instance.interceptors.request.use(
+      (config) => {
+        const skipAuth = (config as RequestOptions).skipAuth;
+        console.log(`📤 Request to ${config.url}, skipAuth: ${skipAuth}`);
+        
+        if (!skipAuth) {
+          const token = this.tokenManager.getToken();
+          if (token) {
+            config.headers = config.headers || {};
+            config.headers.Authorization = `Bearer ${token}`;
+            console.log('🔑 Request: Added Authorization header');
+          } else {
+            console.log('❌ Request: No token available');
+          }
+        } else {
+          console.log('⏭️ Request: Skipping auth as requested');
         }
-
-        const skipAuth = (config as any).skipAuth;
-        if (skipAuth) return config;
-
-        let token = await this.tokenManager.getToken();
-        if (!token || !this.tokenManager.isTokenValid(token)) {
-          token = await this.tokenManager.refreshToken();
-        }
-
-        if (token) {
-          config.headers = config.headers || {};
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-
+        
         return config;
       },
-      (error: AxiosError) => {
+      (error) => {
         console.error('❌ Request interceptor error:', error);
         return Promise.reject(error);
       }
     );
 
+    // Response interceptor - handle errors
     this.instance.interceptors.response.use(
-      (response: AxiosResponse) => {
-        if (process.env.NODE_ENV !== 'production') {
-          console.debug(`✅ ${response.config.url} - Status: ${response.status}`);
-        }
+      (response) => {
+        console.log(`📥 Response from ${response.config.url}: ${response.status}`);
         return response;
       },
-      async (error: AxiosError) => {
-        const config = error.config as InternalAxiosRequestConfig & { retries?: number };
-        if (!config) return Promise.reject(error);
-
-        // Handle 429 (Too Many Requests) with exponential backoff
-        if (error.response?.status === 429) {
-          const retryCount = (config.retries || 0) + 1;
-          if (retryCount <= this.maxRetries) {
-            const delay = Math.pow(2, retryCount) * 1000; // Exponential backoff
-            console.debug(`Retrying request (${retryCount}/${this.maxRetries}) after ${delay}ms`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            config.retries = retryCount;
-            return this.instance(config);
+      (error: AxiosError) => {
+        console.error(`❌ Response error from ${error.config?.url}:`, error.response?.status);
+        
+        if (error.response?.status === 401) {
+          console.log('🚨 401 Unauthorized - Clearing token and dispatching event');
+          this.tokenManager.clearToken();
+          
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('auth:unauthorized'));
           }
         }
-
-        if (error.response?.status === 401) {
-          this.handleUnauthorized();
-        } else if (error.response?.status === 403) {
-          console.warn('🚫 Forbidden - Insufficient permissions');
-        } else if (error.response?.status === 500) {
-          console.error('🔥 Server error');
-        }
-
+        
         return Promise.reject(this.handleError(error));
       }
     );
-  }
-
-  private handleUnauthorized(): void {
-    this.tokenManager.clearToken();
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('auth:unauthorized'));
-    }
-  }
-
-  async get<T = any>(url: string, params?: QueryParams, options?: RequestOptions): Promise<T> {
-    try {
-      const response = await this.instance.get<T>(url, { ...options, params });
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
-  async post<T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-    try {
-      const response = await this.instance.post<T>(url, data, options);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
-  async put<T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-    try {
-      const response = await this.instance.put<T>(url, data, options);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
-  async patch<T = any>(url: string, data?: any, options?: RequestOptions): Promise<T> {
-    try {
-      const response = await this.instance.patch<T>(url, data, options);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
-  async delete<T = any>(url: string, options?: RequestOptions): Promise<T> {
-    try {
-      const response = await this.instance.delete<T>(url, options);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
-  async upload<T = any>(
-    url: string,
-    formData: FormData,
-    onUploadProgress?: any,
-    options?: RequestOptions
-  ): Promise<T> {
-    try {
-      const config: AxiosRequestConfig = {
-        ...options,
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          ...options?.headers,
-        },
-        onUploadProgress,
-      };
-      const response = await this.instance.post<T>(url, formData, config);
-      return response.data;
-    } catch (error) {
-      throw this.handleError(error as AxiosError);
-    }
-  }
-
-  withoutAuth() {
-    return {
-      get: <T = any>(url: string, params?: QueryParams, options?: RequestOptions) =>
-        this.get<T>(url, params, { ...options, skipAuth: true }),
-      post: <T = any>(url: string, data?: any, options?: RequestOptions) =>
-        this.post<T>(url, data, { ...options, skipAuth: true }),
-      put: <T = any>(url: string, data?: any, options?: RequestOptions) =>
-        this.put<T>(url, data, { ...options, skipAuth: true }),
-      patch: <T = any>(url: string, data?: any, options?: RequestOptions) =>
-        this.patch<T>(url, data, { ...options, skipAuth: true }),
-      delete: <T = any>(url: string, options?: RequestOptions) =>
-        this.delete<T>(url, { ...options, skipAuth: true }),
-      upload: <T = any>(
-        url: string,
-        formData: FormData,
-        onUploadProgress?: UploadProgressCallback,
-        options?: RequestOptions
-      ) => this.upload<T>(url, formData, onUploadProgress, { ...options, skipAuth: true }),
-    };
-  }
-
-  withToken(token: string) {
-    return {
-      get: <T = any>(url: string, params?: QueryParams, options?: RequestOptions) =>
-        this.get<T>(url, params, {
-          ...options,
-          headers: { ...options?.headers, Authorization: `Bearer ${token}` },
-        }),
-      post: <T = any>(url: string, data?: any, options?: RequestOptions) =>
-        this.post<T>(url, data, {
-          ...options,
-          headers: { ...options?.headers, Authorization: `Bearer ${token}` },
-        }),
-      put: <T = any>(url: string, data?: any, options?: RequestOptions) =>
-        this.put<T>(url, data, {
-          ...options,
-          headers: { ...options?.headers, Authorization: `Bearer ${token}` },
-        }),
-      patch: <T = any>(url: string, data?: any, options?: RequestOptions) =>
-        this.patch<T>(url, data, {
-          ...options,
-          headers: { ...options?.headers, Authorization: `Bearer ${token}` },
-        }),
-      delete: <T = any>(url: string, options?: RequestOptions) =>
-        this.delete<T>(url, {
-          ...options,
-          headers: { ...options?.headers, Authorization: `Bearer ${token}` },
-        }),
-      upload: <T = any>(
-        url: string,
-        formData: FormData,
-        onUploadProgress?: UploadProgressCallback,
-        options?: RequestOptions
-      ) =>
-        this.upload<T>(url, formData, onUploadProgress, {
-          ...options,
-          headers: { ...options?.headers, Authorization: `Bearer ${token}` },
-        }),
-    };
-  }
-
-  getCurrentToken():  Promise<string | null> {
-    return this.tokenManager.getToken();
-  }
-
-  setToken(token: string, key?: string): void {
-    this.tokenManager.setToken(token, key);
-  }
-
-  clearToken(): void {
-    this.tokenManager.clearToken();
+    
+    console.log('✅ ApiClient: Interceptors setup complete');
   }
 
   private handleError(error: AxiosError): ApiError {
@@ -485,21 +185,141 @@ class RequestWrapper {
     };
 
     if (error.response?.data) {
-      const responseData = error.response.data as any;
-      apiError.message = responseData.message || responseData.error || apiError.message;
-      apiError.errors = responseData.errors;
+      const data = error.response.data as any;
+      apiError.message = data.message || data.error || apiError.message;
+      apiError.errors = data.errors;
     } else if (error.message) {
-      apiError.message = `${error.message} (${error.code || 'UNKNOWN'})`;
+      apiError.message = error.message;
     }
 
-    console.error('API Error:', apiError);
     return apiError;
+  }
+
+  // HTTP Methods với logging
+  async get<T = any>(url: string, config?: RequestOptions): Promise<T> {
+    console.log(`🌐 GET request to: ${url}`);
+    const response = await this.instance.get<T>(url, config);
+    console.log(`✅ GET response from ${url}: Success`);
+    return response.data;
+  }
+
+  async post<T = any>(url: string, data?: any, config?: RequestOptions): Promise<T> {
+    console.log(`🌐 POST request to: ${url}`);
+    const response = await this.instance.post<T>(url, data, config);
+    console.log(`✅ POST response from ${url}: Success`);
+    return response.data;
+  }
+
+  async put<T = any>(url: string, data?: any, config?: RequestOptions): Promise<T> {
+    console.log(`🌐 PUT request to: ${url}`);
+    const response = await this.instance.put<T>(url, data, config);
+    console.log(`✅ PUT response from ${url}: Success`);
+    return response.data;
+  }
+
+  async patch<T = any>(url: string, data?: any, config?: RequestOptions): Promise<T> {
+    console.log(`🌐 PATCH request to: ${url}`);
+    const response = await this.instance.patch<T>(url, data, config);
+    console.log(`✅ PATCH response from ${url}: Success`);
+    return response.data;
+  }
+
+  async delete<T = any>(url: string, config?: RequestOptions): Promise<T> {
+    console.log(`🌐 DELETE request to: ${url}`);
+    const response = await this.instance.delete<T>(url, config);
+    console.log(`✅ DELETE response from ${url}: Success`);
+    return response.data;
+  }
+
+  // File upload
+  async upload<T = any>(url: string, formData: FormData, onProgress?: (progress: number) => void): Promise<T> {
+    console.log(`📤 Upload request to: ${url}`);
+    const response = await this.instance.post<T>(url, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+      onUploadProgress: onProgress ? (e) => {
+        if (e.total) onProgress(Math.round((e.loaded * 100) / e.total));
+      } : undefined,
+    });
+    console.log(`✅ Upload response from ${url}: Success`);
+    return response.data;
+  }
+
+  // Authentication methods
+  async login<T = any>(credentials: any): Promise<T> {
+    console.log('🔐 Login attempt...');
+    const response = await this.post<T>('/auth/login', credentials, { skipAuth: true });
+    console.log('✅ Login successful');
+    return response;
+  }
+
+  async register<T = any>(userData: any): Promise<T> {
+    console.log('📝 Register attempt...');
+    const response = await this.post<T>('/auth/register', userData, { skipAuth: true });
+    console.log('✅ Register successful');
+    return response;
+  }
+
+  // Utility methods
+  withoutAuth() {
+    return {
+      get: <T = any>(url: string, config?: RequestOptions) => 
+        this.get<T>(url, { ...config, skipAuth: true }),
+      post: <T = any>(url: string, data?: any, config?: RequestOptions) => 
+        this.post<T>(url, data, { ...config, skipAuth: true }),
+      put: <T = any>(url: string, data?: any, config?: RequestOptions) => 
+        this.put<T>(url, data, { ...config, skipAuth: true }),
+      patch: <T = any>(url: string, data?: any, config?: RequestOptions) => 
+        this.patch<T>(url, data, { ...config, skipAuth: true }),
+      delete: <T = any>(url: string, config?: RequestOptions) => 
+        this.delete<T>(url, { ...config, skipAuth: true }),
+    };
+  }
+
+  // Token management với logging
+  setToken(token: string): void {
+    console.log('🔐 ApiClient.setToken() called');
+    this.tokenManager.setToken(token);
+    this.setUpHeaderBeforeLogin();
+  }
+
+  clearToken(): void {
+    console.log('🗑️ ApiClient.clearToken() called');
+    this.tokenManager.clearToken();
+  }
+
+  getToken(): string | null {
+    console.log('🔍 ApiClient.getToken() called');
+    return this.tokenManager.getToken();
+  }
+
+  hasValidToken(): boolean {
+    console.log('🔐 ApiClient.hasValidToken() called');
+    return this.tokenManager.hasValidToken();
+  }
+
+  isAuthenticated(): boolean {
+    console.log('🔐 ApiClient.isAuthenticated() called');
+    return this.hasValidToken();
+  }
+
+  // Debug method
+  debugTokenState(): void {
+    console.log('🐛 === TOKEN DEBUG INFO ===');
+    console.log('Token from memory cache:', this.tokenManager.getToken());
+    console.log('Has valid token:', this.hasValidToken());
+    console.log('Is authenticated:', this.isAuthenticated());
+    
+    try {
+      const lsToken = localStorage.getItem('authToken');
+      console.log('Token from localStorage:', lsToken);
+    } catch (e) {
+      console.log('Cannot access localStorage:', e);
+    }
+    console.log('🐛 === END DEBUG INFO ===');
   }
 }
 
 // ==================== EXPORT ====================
-
-const request = new RequestWrapper();
-export default request;
-export { RequestWrapper, TokenManager };
-export type { ApiResponse, ApiError, RequestOptions, QueryParams, UploadProgressCallback, TokenConfig, RequestConfig };
+export default new ApiClient(BASE_API_URL);
+export type { ApiClient };
+export type { ApiError, RequestOptions };
