@@ -1,9 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Form, Input, Button, Typography, Alert, Space, Spin } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   loginRequest,
@@ -14,15 +13,14 @@ import {
 import { selectSettings } from '../../store/slices/settingSlice';
 import type { AppDispatch } from '../../store/store';
 import { storageService } from '../../helper/tokenHelper';
+import {TokenManager}  from '../../config/axios';
+
 
 interface LoginFormValues {
   username: string;
   password: string;
 }
 
-interface DecodedToken {
-  exp: number;
-}
 
 const LoginPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -33,26 +31,12 @@ const LoginPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [showContactForm, setShowContactForm] = useState(false);
 
-  const isTokenValid = (token: string): boolean => {
-    try {
-      const decoded: DecodedToken = jwtDecode(token);
-      return Date.now() < decoded.exp * 1000;
-    } catch {
-      return false;
-    }
-  };
-
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const authUserString = storageService.getItem('persist:authUser');
-        if (!authUserString) throw new Error('No auth data');
+        const isValid = TokenManager.hasValidToken(null);
 
-        const authUser = JSON.parse(authUserString);
-        const tokenObj = authUser?.token ? JSON.parse(authUser.token) : null;
-        const accessToken = tokenObj?.accessToken;
-
-        if (accessToken && isTokenValid(accessToken)) {
+        if (isValid) {
           navigate('/dashboard');
         } else {
           throw new Error('Invalid or expired token');
@@ -71,14 +55,23 @@ const LoginPage: React.FC = () => {
     document.documentElement.classList.toggle('dark', settings.darkMode);
   }, [settings.darkMode]);
 
-  const handleLogin = async (values: LoginFormValues) => {
+  const handleLogin = useCallback(async (values: LoginFormValues) => {
+    if (isLoading) return; // Prevent multiple calls
+    
+    setIsLoading(true);
     try {
-      await dispatch(loginRequest(values)).unwrap();
-      navigate('/dashboard');
+      const response = await dispatch(loginRequest(values)).unwrap();
+      
+      if (response) {
+        console.log("Login successful!");
+        navigate('/dashboard');
+      }
     } catch (error) {
       console.error('Login failed:', error);
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, [dispatch, navigate, isLoading]);
 
   useEffect(() => {
     if (error) {

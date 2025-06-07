@@ -344,7 +344,7 @@ const handleSubmit = async () => {
                         className="w-full"
                       >
                         <Radio.Button value="low" className="w-1/4 text-center">Low</Radio.Button>
-                        <Radio.Button value="normal" className="w-1/4 text-center">Normal</Radio.Button>
+                        <Radio.Button value="medium" className="w-1/4 text-center">Normal</Radio.Button>
                         <Radio.Button value="high" className="w-1/4 text-center">High</Radio.Button>
                         <Radio.Button value="urgent" className="w-1/4 text-center">Urgent</Radio.Button>
                       </Radio.Group>

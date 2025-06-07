@@ -14,27 +14,27 @@ export const notificationTypes = [
     color: 'blue'
   },
   { 
-    value: 'tuition', 
-    label: 'Học phí', 
-    defaultContent: 'Nhắc nhở về thời hạn nộp học phí học kỳ.',
-    icon: '💰',
-    color: 'green'
-  },
-  { 
-    value: 'attendance', 
-    label: 'Điểm danh', 
-    defaultContent: 'Cảnh báo về tình trạng nghỉ học vượt quá quy định.',
-    icon: '📋',
+    value: 'deadline', 
+    label: 'Hạn chót', 
+    defaultContent: 'Sắp đến hạn nộp bài/tài liệu quan trọng.',
+    icon: '⏰',
     color: 'red'
   },
   { 
-    value: 'emergency', 
-    label: 'Khẩn cấp', 
-    defaultContent: 'Thông báo khẩn cấp từ ban giám hiệu trường.',
-    icon: '🚨',
-    color: 'volcano'
+    value: 'achievement', 
+    label: 'Thành tích', 
+    defaultContent: 'Chúc mừng bạn đã đạt thành tích học tập xuất sắc!',
+    icon: '🏆',
+    color: 'green'
   },
-];
+  { 
+    value: 'reminder', 
+    label: 'Nhắc nhở', 
+    defaultContent: 'Đừng quên kiểm tra lịch học và cập nhật thông tin cá nhân.',
+    icon: '🔔',
+    color: 'purple'
+  }
+]
 
 export const priorities = [
   { value: 'low', label: 'Thấp', color: 'green', percentage: 25 },

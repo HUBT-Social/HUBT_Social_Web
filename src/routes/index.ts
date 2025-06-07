@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, RouteObject, useRoutes } from 'react-router-dom';
+import { RouteObject, useRoutes } from 'react-router-dom';
 import ColorTestPage from '../components/ColorTest';
 import Layout from '../components/Layout';
 //import { extractTokenInfo } from '../helper/extratoken';
@@ -13,7 +13,7 @@ import TeaturesLayout from '../pages/dashboard/features';
 import NotificationLayout from '../pages/dashboard/notification';
 import NotificationScreen from '../pages/dashboard/notification/NotificationScreen';
 import NotificationSystem from '../pages/dashboard/notification/NotificationSystem';
-import EnhancedNotificationSystem from '../pages/dashboard/notification/SendAcademicNotificationScreen';
+import EnhancedNotificationSystem from '../pages/dashboard/notification/notification_academic/index';
 import SettingAndProfile from '../pages/dashboard/settings';
 import StudentsLayout from '../pages/dashboard/students';
 import StudentList from '../pages/dashboard/students/StudentList';
@@ -23,20 +23,14 @@ import {
   TeacherLayout
 } from '../pages/dashboard/teachers/index';
 import HomePage from '../pages/home/HomePage';
-import { extractTokenInfo } from '../helper/extratoken';
-import { userFromStorage } from '../helper/tokenHelper';
+//import { TokenManager } from '../config/axios';
 
-//Hàm kiểm tra token còn hạn hay không
-const availableToken = (): boolean => {
-  const userToken = extractTokenInfo();
-  return userToken !== null && !userToken.isExpired;
-};
 
 // Component bảo vệ route
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  if (!userFromStorage || !availableToken()) {
-    return React.createElement(Navigate, { to: '/login', replace: true });
-  }
+  // if (!TokenManager.hasValidToken(null)) {
+  //   return React.createElement(Navigate, { to: '/login', replace: true });
+  // }
   return React.createElement(React.Fragment, null, children);
 };
 

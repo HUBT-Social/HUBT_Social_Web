@@ -25,5 +25,7 @@ export interface UserToken {
     status: string;
     gender: number; // Enum Gender bên C# cần map lại
     dateOfBirth?: string; // DateTime nên để dạng string ISO (yyyy-mm-dd)
-    className: string | null;
+    className: string | '';
   }
+
+

@@ -5,17 +5,20 @@ import {
   isRejected,
   isPending,
 } from '@reduxjs/toolkit';
-import axios from 'axios';
 import { RootState } from '../store';
 import { UserInfo } from '../../types/User';
 import { getTokensFromLocalStorage } from '../../helper/tokenHelper';
 import storage from 'redux-persist/es/storage';
 import { persistReducer } from 'redux-persist';
+import instance from '../../config/axios';
+import { AcademicStatus, AverageScore, Student } from '../../types/Student';
 
 interface StudentState {
   loading: boolean;
   students: UserInfo[];
   filteredStudents: UserInfo[];
+  mergeStudentsWithScores: Student[];
+  averageScore: AverageScore[];
   isLoaded: boolean;
   error: string | null;
 }
@@ -24,15 +27,59 @@ const initialState: StudentState = {
   loading: false,
   students: [],
   filteredStudents: [],
+  mergeStudentsWithScores: [],
+  averageScore: [],
   isLoaded: false,
   error: null,
 };
 
 interface GetUserResponse {
-  users: UserInfo[];
+  aUserDTOs: UserInfo[];
   hasMore: boolean;
   message: string;
 }
+
+const calculateStatusAcademic = (gpa10: number): AcademicStatus => {
+    if (gpa10 >= 9.0) return 'Excellent';
+    if (gpa10 >= 8.0) return 'VeryGood';
+    if (gpa10 >= 7.0) return 'Good';
+    if (gpa10 >= 6.5) return 'FairlyGood';
+    if (gpa10 >= 5.0) return 'Average';
+    return 'Warning'; // Anything below 4.0 is Poor; MustDropOut may be set by other logic
+};
+const calculateFaculty = (className: string | null): string => {
+    if (!className) return 'N/A';
+      const match = className.match(/^[A-Za-z]+/);
+      return match ? match[0] : 'N/A';
+    };
+const calculateCourse = (className: string | null): string => {
+    if (!className) return 'N/A';
+      const match = className.match(/\d+/);
+      return match ? match[0] : 'N/A';
+    };
+
+const mapToStudents = (userInfos: UserInfo[], averageScores: AverageScore[]): Student[] => {
+  // Tạo Map từ userName đến AverageScore
+  const scoreMap = new Map<string, AverageScore>(
+    averageScores.map((score) => [score.maSV, score])
+  );
+
+  // Map userInfos thành Students và lọc bỏ null
+  return userInfos
+    .map((userInfo) => {
+      const averageScore = scoreMap.get(userInfo.userName);
+      if (!averageScore) return null; // Bỏ qua nếu không tìm thấy AverageScore
+      return {
+        ...userInfo,
+        ...averageScore,
+        faculty: calculateFaculty(userInfo.className),
+        course: calculateCourse(userInfo.className),
+        academicStatus: calculateStatusAcademic(averageScore.diemTB10),
+        subjects: [], // Optional, có thể thêm dữ liệu nếu có
+      };
+    })
+    .filter((student) => student !== null); // Lọc bỏ các null
+};
 
 // ========================
 // Async Thunks
@@ -45,16 +92,55 @@ export const getStudents = createAsyncThunk<
   { rejectValue: string }
 >('students/get', async (page, { rejectWithValue }) => {
   try {
-    const res = await axios.get(
-      `https://localhost:7223/api/user/get-user-by-role?roleName=USER&page=${page}`
-    );
-    return res.data;
+    const res = await instance.USER_SERVICE.get(`/api/user/get-user-by-role?roleName=USER&page=${page}`);
+    return res;
   } catch (error: any) {
     return rejectWithValue(
       error.response?.data?.message || error.message || 'Không thể tải danh sách sinh viên'
     );
   }
 });
+
+export const getAverageScore = createAsyncThunk<
+  AverageScore[],
+  void,
+  { rejectValue: string }
+>('students/getScore', async (_, { rejectWithValue }) => {
+  try {
+    let hasMore = true;
+    let page = 0;
+    const scores: AverageScore[] = [];
+
+    while (hasMore) {
+      const res = await instance.OUT_SERVICE.get<{
+        data: {
+          scores: AverageScore[];
+          hasMore: boolean;
+        };
+        message: string;
+        statusCode: number;
+      }>(`/api/hubt/getSliceScore?page=${page}`);
+
+      const currentScores = res.data.scores;
+      scores.push(...currentScores); // ✅ nhanh hơn [...scores, ...]
+      console.log('Srcore: ',scores.length);
+      hasMore = res.data.hasMore;
+      page++;
+    }
+
+    return scores;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message ||
+        error.message ||
+        'Không thể tải danh sách sinh viên'
+    );
+  }
+});
+
+
+
+
 
 // Add a new student
 export const addStudent = createAsyncThunk<
@@ -66,16 +152,7 @@ export const addStudent = createAsyncThunk<
     const token = getTokensFromLocalStorage();
     if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-    const res = await axios.post(
-      'https://localhost:7223/api/user/add-user',
-      newStudent,
-      {
-        headers: {
-          Authorization: `Bearer ${token.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const res = await instance.USER_SERVICE.post('/api/user/add-user',newStudent);
     return res.data.user;
   } catch (error: any) {
     return rejectWithValue(
@@ -94,16 +171,7 @@ export const setStudent = createAsyncThunk<
     const token = getTokensFromLocalStorage();
     if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-    const res = await axios.put(
-      'https://localhost:7223/api/user/update-user-admin',
-      updatedStudent,
-      {
-        headers: {
-          Authorization: `Bearer ${token.accessToken}`,
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    const res = await instance.USER_SERVICE.put('api/user/update-user-admin',updatedStudent);
     return res.status === 200 ? res.data.user : null;
   } catch (error: any) {
     return rejectWithValue(
@@ -122,11 +190,7 @@ export const deleteStudent = createAsyncThunk<
     const token = getTokensFromLocalStorage();
     if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-    await axios.delete(`https://localhost:7223/api/user/delete-user/${username}`, {
-      headers: {
-        Authorization: `Bearer ${token.accessToken}`,
-      },
-    });
+    await instance.USER_SERVICE.delete(`/api/user/delete-user/${username}`);
     return username;
   } catch (error: any) {
     return rejectWithValue(
@@ -147,6 +211,7 @@ const studentSlice = createSlice({
     },
     setStudents: (state, action: PayloadAction<UserInfo[]>) => {
       state.students = action.payload;
+      state.mergeStudentsWithScores = [];
       state.filteredStudents = action.payload;
     },
     setFilteredStudents: (state, action: PayloadAction<UserInfo[]>) => {
@@ -169,11 +234,11 @@ const studentSlice = createSlice({
       // GET
       .addCase(getStudents.fulfilled, (state, action: PayloadAction<GetUserResponse>) => {
         console.log('Fetched students:', {
-          usersReceived: action.payload.users.length,
+          usersReceived: action.payload.aUserDTOs.length,
           currentStudentsCount: state.students.length,
         });
 
-        const newStudents = action.payload.users.filter(
+        const newStudents = action.payload.aUserDTOs.filter(
           (user) => !state.students.some((s) => s.userName === user.userName)
         );
         state.students = [...state.students, ...newStudents];
@@ -181,6 +246,12 @@ const studentSlice = createSlice({
         state.loading = false;
         state.isLoaded = true;
       })
+      
+  .addCase(getAverageScore.fulfilled, (state, action: PayloadAction<AverageScore[]>) => {
+    state.loading = false;
+    console.log('Score count:', action.payload.length);
+    state.mergeStudentsWithScores = mapToStudents(state.students,action.payload);
+  })
       // ADD
       .addCase(addStudent.fulfilled, (state, action) => {
         state.students = [...state.students, action.payload];
@@ -248,5 +319,6 @@ export const selectStudentsFiltered = (state: RootState) => state.students.filte
 export const selectIsLoaded = (state: RootState) => state.students.isLoaded;
 export const selectStudentsLoading = (state: RootState) => state.students.loading;
 export const selectStudentsError = (state: RootState) => state.students.error;
+export const selectMergeStudentsWithScores = (state: RootState) => state.students.mergeStudentsWithScores;
 
 export default persistedTeacherReducer;

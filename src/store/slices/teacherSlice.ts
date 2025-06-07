@@ -9,7 +9,7 @@ import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { RootState } from '../store';
 import { UserInfo } from '../../types/User';
-import axios from 'axios';
+import instance from '../../config/axios';
 import { getTokensFromLocalStorage } from '../../helper/tokenHelper';
 
 // Interface for state
@@ -31,7 +31,7 @@ const initialState: TeacherState = {
 };
 
 interface GetUserResponse {
-  users: UserInfo[];
+  aUserDTOs: UserInfo[];
   hasMore: boolean;
   message: string;
 }
@@ -47,11 +47,9 @@ export const getTeachers = createAsyncThunk<
   { rejectValue: string }
 >('teachers/get', async (page, { rejectWithValue }) => {
   try {
-    const res = await axios.get(
-      `https://localhost:7223/api/user/get-user-by-role?roleName=TEACHER&page=${page}`
-    );
-    console.log("User: ", res.data.users.length);
-    return res.data;
+    const res = await instance.USER_SERVICE.get(`/api/user/get-user-by-role?roleName=TEACHER&page=${page}`);
+    console.log("Teacher: ", res.aUserDTOs.length);
+    return res as GetUserResponse;
   } catch (error: any) {
     return rejectWithValue(
       error.response?.data?.message || error.message || 'Không thể tải danh sách giáo viên'
@@ -67,17 +65,8 @@ export const addTeacher = createAsyncThunk<UserInfo, UserInfo, { rejectValue: st
       const token = getTokensFromLocalStorage();
       if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-      const res = await axios.post(
-        'https://localhost:7223/api/user/add-user',
-        newTeacher,
-        {
-          headers: {
-            Authorization: `Bearer ${token.accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      return res.data.user;
+      const res = await instance.USER_SERVICE.post('/api/user/add-user', newTeacher);
+      return res.user;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || error.message || 'Thêm giáo viên thất bại'
@@ -94,17 +83,8 @@ export const setTeacher = createAsyncThunk<UserInfo | null, UserInfo, { rejectVa
       const token = getTokensFromLocalStorage();
       if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-      const res = await axios.put(
-        'https://localhost:7223/api/user/update-user-admin',
-        updatedTeacher,
-        {
-          headers: {
-            Authorization: `Bearer ${token.accessToken}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      return res.status === 200 ? res.data.user : null;
+      const res = await instance.USER_SERVICE.put('/api/user/update-user-admin',updatedTeacher);
+      return res
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || error.message || 'Cập nhật thông tin thất bại'
@@ -121,11 +101,7 @@ export const deleteTeacher = createAsyncThunk<string, string, { rejectValue: str
       const token = getTokensFromLocalStorage();
       if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-      await axios.delete(`https://localhost:7223/api/user/delete-user/${username}`, {
-        headers: {
-          Authorization: `Bearer ${token.accessToken}`,
-        },
-      });
+      await instance.USER_SERVICE.delete(`/api/user/delete-user/${username}`);
       return username;
     } catch (error: any) {
       return rejectWithValue(
@@ -174,11 +150,11 @@ const teacherSlice = createSlice({
       // GET
       .addCase(getTeachers.fulfilled, (state, action: PayloadAction<GetUserResponse>) => {
         console.log('Fetched teachers:', {
-          usersReceived: action.payload.users.length,
+          usersReceived: action.payload.aUserDTOs.length,
           currentTeachersCount: state.teachers.length,
         });
 
-        const newTeachers = action.payload.users.filter(
+        const newTeachers = action.payload.aUserDTOs.filter(
           (user) => !state.teachers.some((t) => t.userName === user.userName)
         );
         state.teachers = [...state.teachers, ...newTeachers];

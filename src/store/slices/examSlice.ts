@@ -32,7 +32,7 @@ export const fetchExams = createAsyncThunk<
   'exams/fetchExams',
   async (_, { rejectWithValue }) => {
     try {
-      const response = await instance.get('/exams');
+      const response = await instance.TEMP_SERVICE.get('/exams');
       return response.data as Exam[];
     } catch (error: any) {
       let errorMessage = 'Đã có lỗi xảy ra khi lấy danh sách bài kiểm tra';
@@ -55,7 +55,7 @@ export const addExam = createAsyncThunk<
   'exams/addExam',
   async (examData, { rejectWithValue }) => {
     try {
-      const response = await instance.post('/exams', examData);
+      const response = await instance.TEMP_SERVICE.post('/exams', examData);
       return response.data as Exam;
     } catch (error: any) {
       let errorMessage = 'Đã có lỗi xảy ra khi thêm bài kiểm tra';
@@ -78,7 +78,7 @@ export const updateExam = createAsyncThunk<
   'exams/updateExam',
   async (examData, { rejectWithValue }) => {
     try {
-      const response = await instance.put(`/exams/${examData.id}`, {
+      const response = await instance.TEMP_SERVICE.put(`/exams/${examData.id}`, {
         title: examData.title,
         description: examData.description,
       });
@@ -104,7 +104,7 @@ export const deleteExam = createAsyncThunk<
   'exams/deleteExam',
   async (id, { rejectWithValue }) => {
     try {
-      await instance.delete(`/exams/${id}`);
+      await instance.TEMP_SERVICE.delete(`/exams/${id}`);
       return id;
     } catch (error: any) {
       let errorMessage = 'Đã có lỗi xảy ra khi xóa bài kiểm tra';

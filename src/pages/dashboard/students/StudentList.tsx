@@ -1,16 +1,18 @@
-import { Card, Spin } from 'antd';
+import { Button, Card, Spin } from 'antd';
 import { AlertCircle } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import StudentFilter from '../../../components/StudentFilter';
 import {
+  getAverageScore,
   getStudents,
   selectIsLoaded,
   selectStudentsError,
   selectStudentsFiltered,
   selectStudentsLoading,
+  setStudents
 } from '../../../store/slices/studentSlice';
-import { AppDispatch } from '../../../store/store';
+import { AppDispatch, store } from '../../../store/store';
 import { UserInfo } from '../../../types/User';
 import StudentDetail from './StudentDetail';
 import StudentEmpty from './StudentEmpty';
@@ -24,20 +26,49 @@ const StudentList: React.FC = () => {
   const isLoaded = useSelector(selectIsLoaded);
   const [currentStudent, setCurrentStudent] = useState<UserInfo | null>(null);
 
-  // Fetch student data
   const fetchStudentsData = async () => {
     try {
       let page = 1;
+      const pageStop_Test=5;
       let hasMore = true;
 
-      while (hasMore) {
+      while (hasMore && page <= pageStop_Test) {
+        const currentStudetsCount = store.getState().students.students.length;
+        
         const response = await dispatch(getStudents(page)).unwrap();
+        
+        // Đợi state thay đổi
+        await new Promise((resolve) => {
+          const unsubscribe = store.subscribe(() => {
+            const newCount = store.getState().students.students.length;
+            if (newCount > currentStudetsCount) {
+              unsubscribe();
+              resolve(true);
+            }
+          });
+        });
+        
         hasMore = response?.hasMore;
         page += 1;
       }
+      const currentMargeStudent = store.getState().students.mergeStudentsWithScores.length
+      console.log("Curent student marge: ",currentMargeStudent);
+      await dispatch(getAverageScore());
+      await new Promise((resolve) => {
+          const unsubscribe = store.subscribe(() => {
+            const newCount = store.getState().students.mergeStudentsWithScores.length;
+            if (newCount > currentMargeStudent) {
+              unsubscribe();
+              resolve(true);
+            }
+            console.log("Curent std: ",newCount);
+          });
+        });
+      console.log("Before: ",store.getState().students.mergeStudentsWithScores.length);
     } catch (err) {
-      console.error('Lỗi khi fetch dữ liệu sinh viên:', err);
+      console.error('Lỗi khi fetch dữ liệu sinh vien:', err);
     }
+    
   };
 
   useEffect(() => {
@@ -73,11 +104,24 @@ const StudentList: React.FC = () => {
       </Card>
     );
   }
+  const reLoading = () => {
+      dispatch(setStudents([]));
+      fetchStudentsData();
+  }
+
+  const renderExtra = () => {
+    return (
+      <div>
+        <Button onClick={reLoading}>Reload</Button>
+        <Button>Xuất Excel</Button>
+      </div>
+    );
+  };
 
   return (
     <>
       <StudentFilter />
-      <Card title="Danh sách sinh viên" className="rounded-lg shadow-md">
+      <Card title="Danh sách sinh viên" className="rounded-lg shadow-md" extra={renderExtra()}>
         {students.length === 0 ? (
           <StudentEmpty />
         ) : (

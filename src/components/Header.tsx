@@ -1,7 +1,8 @@
 import { BellOutlined, MenuOutlined } from '@ant-design/icons';
 import { Badge, Button, Dropdown, List, Modal, Typography } from 'antd';
 import React, { useState } from 'react';
-
+import { TokenManager } from '../config/axios';
+import { useNavigate } from 'react-router';
 const { Title, Text } = Typography;
 
 interface HeaderProps {
@@ -11,6 +12,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const navigate = useNavigate();
 
   const notifications = [
     { id: 1, content: '🧠 AI của bạn đã phân tích xong dữ liệu.' },
@@ -25,7 +27,8 @@ const Header: React.FC<HeaderProps> = ({ onToggleSidebar }) => {
 
   const confirmLogout = () => {
     setIsModalVisible(false);
-    console.log('Đăng xuất...');
+    TokenManager.clearToken();
+    navigate('/login');
   };
 
   const handleCancelLogout = () => {

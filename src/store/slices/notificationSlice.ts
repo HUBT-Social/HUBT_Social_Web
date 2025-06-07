@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import axios from 'axios';
+import instance from '../../config/axios';
 import { NOTIFICATION_ENDPOINT } from '../../services/endpoints';
 import { RootState } from '../store';
 
@@ -51,7 +51,7 @@ export const sendNotification = createAsyncThunk<
   { rejectValue: string }
 >(
   'notification/sendNotification',
-  async ({payload,token}, { rejectWithValue }) => {
+  async ({payload}, { rejectWithValue }) => {
     // Validate payload
     if (!payload.title?.trim()) {
       return rejectWithValue('Tiêu đề thông báo không được để trống');
@@ -74,11 +74,7 @@ export const sendNotification = createAsyncThunk<
     let attempt = 0;
     while (attempt < maxRetries) {
       try {
-        await axios.post('https://localhost:7197'+ NOTIFICATION_ENDPOINT.POST_SENT_BY_CONDITION, payload, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        await instance.NOTIFICATION_SERVICE.post(NOTIFICATION_ENDPOINT.POST_SENT_BY_CONDITION, payload);
         return;
       } catch (error: any) {
         attempt++;

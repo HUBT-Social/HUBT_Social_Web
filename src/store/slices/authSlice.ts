@@ -3,9 +3,10 @@ import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import instance from '../../config/axios';
 import { RootState } from '../store';
-import { AUTH_ENDPOINTS, USER_ENDPOINTS } from '../../services/endpoints';
+import {USER_ENDPOINTS } from '../../services/endpoints';
 import { handleLoginSuccess, handleLogout } from '../../helper/tokenHelper';
 import { LoginResponse, UserToken } from '../../types/User';
+
 
 // ----------------------------
 // Interfaces
@@ -57,12 +58,8 @@ export const loginRequest = createAsyncThunk<
   { rejectValue: string }
 >('auth/login', async (credentials, { rejectWithValue }) => {
   try {
-    const response = await instance.withoutAuth().post(AUTH_ENDPOINTS.POST_SIGN_IN, JSON.stringify(credentials));
-    const result = response.data  as LoginResponse;
-    if(result.userToken.accessToken){
-      instance.setToken(response?.userToken.accessToken);
-    }
-    return result;
+    const response = await instance.login(credentials);
+    return response;
   } catch (error: any) {
     const errorMessage = error.response?.data?.message || error.message || 'Đã có lỗi xảy ra';
     return rejectWithValue(errorMessage);
@@ -81,7 +78,7 @@ export const getInfoUser = createAsyncThunk<
     //     'Content-Type': 'application/json',
     //   },
     // });
-    const response = await instance.get<UserState>(USER_ENDPOINTS.GET_USER);
+    const response = await instance.USER_SERVICE.get(USER_ENDPOINTS.GET_USER);
     return response;
   } catch (error: any) {
     const errorMessage =
@@ -100,7 +97,7 @@ export const updateUserProfile = createAsyncThunk<
   'user/updateUserProfile',
   async (profileData, { rejectWithValue }) => {
     try {
-      const response = await instance.put('/user/profile', profileData);
+      const response = await instance.USER_SERVICE.post('/user/profile', profileData);
       return response.data as any;
     } catch (error: any) {
       let errorMessage = 'Đã có lỗi xảy ra khi cập nhật thông tin người dùng';

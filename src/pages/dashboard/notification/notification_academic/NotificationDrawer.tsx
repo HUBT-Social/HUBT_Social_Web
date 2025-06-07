@@ -2,6 +2,7 @@ import React from 'react';
 import { Drawer, Alert, Select, Space, Tag, Progress, Button, DatePicker, Input, Typography } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
 import { notificationTypes, priorities, channelOptions } from '../constants/notificationConstants';
+import { ChannelType, NotificationPriority, NotificationType } from '../../../../types/Notification';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -11,12 +12,12 @@ interface NotificationDrawerProps {
   visible: boolean;
   onClose: () => void;
   selectedRowKeys: React.Key[];
-  notificationType: string;
-  setNotificationType: React.Dispatch<React.SetStateAction<string>>;
-  priority: 'low' | 'medium' | 'high';
-  setPriority: React.Dispatch<React.SetStateAction<'low' | 'medium' | 'high'>>;
-  channels: string[];
-  setChannels: React.Dispatch<React.SetStateAction<string[]>>;
+  notificationType: NotificationType | '';
+  setNotificationType: React.Dispatch<React.SetStateAction<NotificationType | ''>>;
+  priority: NotificationPriority;
+  setPriority: React.Dispatch<React.SetStateAction<NotificationPriority>>;
+  channels: ChannelType[];
+  setChannels: React.Dispatch<React.SetStateAction<ChannelType[]>>;
   customMessage: string;
   setCustomMessage: React.Dispatch<React.SetStateAction<string>>;
   scheduleDate: any;
