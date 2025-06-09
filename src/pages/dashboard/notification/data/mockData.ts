@@ -11,50 +11,18 @@ import {
 import type { FC } from 'react';
 import type { IconComponentProps } from '@ant-design/icons/lib/components/Icon';
 import { UserInfo } from '../../../../types/User';
+import { Stats ,Notification, Template} from '../../../../types/Notification';
 
 // Define the type for Ant Design icons
 type AntDesignIcon = FC<IconComponentProps>;
 
-// Define types for notification type options
-interface NotificationTypeOption {
+export interface NotificationTypeOption {
   value: string;
   label: string;
   color: string;
   bgColor: string;
   icon: AntDesignIcon;
   gradient: string;
-}
-
-// Define types for notifications (consistent with NotificationProvider.tsx)
-interface Notification {
-  id: number;
-  title: string;
-  body: string;
-  type: string;
-  recipients: number;
-  time: string;
-  status: string;
-}
-
-// Define types for statistics
-interface Stats {
-  totalSent: number;
-  todaySent: number;
-  deliveryRate: number;
-  readRate: number;
-  monthlyTrend: number[];
-  typeDistribution: {
-    [key: string]: number;
-  };
-}
-
-
-// Define types for notification templates
-interface Template {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
 }
 
 // Mock notification types with enhanced styling
@@ -67,16 +35,6 @@ export const notificationTypeOptions: NotificationTypeOption[] = [
   { value: 'urgent', label: 'Urgent', color: 'text-purple-600', bgColor: 'bg-purple-100', icon: ThunderboltOutlined, gradient: 'from-purple-400 to-purple-600' },
   { value: 'success', label: 'Success', color: 'text-emerald-600', bgColor: 'bg-emerald-100', icon: CheckCircleOutlined, gradient: 'from-emerald-400 to-emerald-600' },
   { value: 'info', label: 'Information', color: 'text-cyan-600', bgColor: 'bg-cyan-100', icon: InfoCircleOutlined, gradient: 'from-cyan-400 to-cyan-600' },
-];
-
-// Mock data for notifications history
-export const mockRecentNotifications: Notification[] = [
-  { id: 1, title: 'Welcome to new semester', body: 'Welcome to the Fall 2025 semester! We hope you have a productive and enjoyable academic term.', type: 'announcement', recipients: 1250, time: '2 hours ago', status: 'sent' },
-  { id: 2, title: 'Assignment due reminder', body: 'This is a reminder that your CS101 assignment is due tomorrow at midnight.', type: 'reminder', recipients: 350, time: '1 day ago', status: 'delivered' },
-  { id: 3, title: 'Emergency maintenance', body: 'The campus network will be down for emergency maintenance tonight from 2-4 AM.', type: 'urgent', recipients: 2500, time: '2 days ago', status: 'read' },
-  { id: 4, title: 'Sports event registration', body: 'Registration for the annual inter-faculty sports tournament is now open. Please register by Friday.', type: 'event', recipients: 800, time: '3 days ago', status: 'sent' },
-  { id: 5, title: 'Library hours update', body: 'The library will now be open 24/7 during exam week to accommodate student needs.', type: 'info', recipients: 1800, time: '4 days ago', status: 'delivered' },
-  { id: 6, title: 'Scholarship application', body: 'Applications for the Merit Scholarship program are due next week.', type: 'default', recipients: 500, time: '5 days ago', status: 'read' },
 ];
 
 // Mock data for statistics

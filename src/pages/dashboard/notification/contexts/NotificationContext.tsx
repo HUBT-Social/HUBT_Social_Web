@@ -1,7 +1,7 @@
 import type { Dayjs } from 'dayjs'; // Thêm import Dayjs
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { UserInfo } from '../../../../types/User';
-import { mockRecentNotifications, mockStats, mockUsers } from '../data/mockData';
+import {Notification} from '../../../../types/Notification';
 
 
 
@@ -16,16 +16,6 @@ interface Stats {
   };
 }
 
-interface Notification {
-  id: number;
-  title: string;
-  body: string;
-  type: string;
-  recipients: number;
-  time: string;
-  status: string;
-}
-
 interface Template {
   id: string;
   title: string;
@@ -38,8 +28,6 @@ interface NotificationContextType {
   // UI state
   activeTab: string;
   setActiveTab: React.Dispatch<React.SetStateAction<string>>;
-  notification: Notification | null;
-  setNotification: React.Dispatch<React.SetStateAction<Notification | null>>;
   isLoading: boolean;
   setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
   isPreviewVisible: boolean;
@@ -84,10 +72,6 @@ interface NotificationContextType {
   // Data
   users: UserInfo[];
   setUsers: React.Dispatch<React.SetStateAction<UserInfo[]>>;
-  stats: Stats;
-  setStats: React.Dispatch<React.SetStateAction<Stats>>;
-  recentNotifications: Notification[];
-  setRecentNotifications: React.Dispatch<React.SetStateAction<Notification[]>>;
   selectedTemplate: Template | null;
   setSelectedTemplate: React.Dispatch<React.SetStateAction<Template | null>>;
   searchTerm: string;
@@ -141,9 +125,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   
   // Data
-  const [users, setUsers] = useState<UserInfo[]>(mockUsers);
-  const [stats, setStats] = useState<Stats>(mockStats);
-  const [recentNotifications, setRecentNotifications] = useState<Notification[]>(mockRecentNotifications);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -160,8 +141,6 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     // UI state
     activeTab,
     setActiveTab,
-    notification,
-    setNotification,
     isLoading,
     setIsLoading,
     isPreviewVisible,
@@ -170,7 +149,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setPreviewDevice,
     templateMode,
     setTemplateMode,
-    
+
     // Form state
     title,
     setTitle,
@@ -202,20 +181,17 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     setRequestId,
     errors,
     setErrors,
-    
-    // Data
-    users,
-    setUsers,
-    stats,
-    setStats,
-    recentNotifications,
-    setRecentNotifications,
+
     selectedTemplate,
     setSelectedTemplate,
     searchTerm,
     setSearchTerm,
     filterType,
-    setFilterType
+    setFilterType,
+    users: [],
+    setUsers: function (value: React.SetStateAction<UserInfo[]>): void {
+      throw new Error('Function not implemented.');
+    },
   };
 
   return (

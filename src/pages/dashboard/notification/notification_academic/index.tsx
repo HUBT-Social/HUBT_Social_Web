@@ -15,7 +15,7 @@ import {
   Badge,
 } from 'antd';
 import { SendOutlined, SaveOutlined, HistoryOutlined } from '@ant-design/icons';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 
 // Import components
 import StatisticsCards from './StatisticsCards';
@@ -23,32 +23,22 @@ import NotificationDrawer from './NotificationDrawer';
 
 // Import data and constants
 import { columns } from './TableColumns';
-import { NotificationTypeOption, NotificationHistory, SavedGroup, NotificationType, NotificationPriority, ChannelType } from '../../../../types/Notification';
+import { SavedGroup, NotificationType, NotificationPriority, ChannelType,  SendNotificationByAcademic } from '../../../../types/Notification';
 import { selectMergeStudentsWithScores } from '../../../../store/slices/studentSlice';
 import { createFullName } from '../../../../types/Student';
+import {notificationTypeOptions as notificationTypes} from '../data/mockData';
+import {Notification} from '../../../../types/Notification';
+import { AppDispatch } from '../../../../store/store';
+import { sendAcademicNotification } from '../../../../store/slices/notificationSlice';
+import { NotificationProvider } from '../contexts/NotificationContext';
 
 const { Title, Text } = Typography;
 
-// Notification type options (mock data, can be moved to constants file)
-const notificationTypes: NotificationTypeOption[] = [
-  { value: 'academic', label: 'Academic', color: 'blue', bgColor: '#e6f7ff', icon: '📚', gradient: 'from-blue-500 to-blue-300' },
-  { value: 'attendance', label: 'Attendance', color: 'orange', bgColor: '#fff7e6', icon: '🔔', gradient: 'from-orange-500 to-orange-300' },
-  { value: 'warning', label: 'Warning', color: 'red', bgColor: '#fff1f0', icon: '⚠️', gradient: 'from-red-500 to-red-300' },
-  { value: 'event', label: 'Event', color: 'green', bgColor: '#f6ffed', icon: '🎉', gradient: 'from-green-500 to-green-300' },
-  { value: 'tuition', label: 'Tuition', color: 'purple', bgColor: '#f9f0ff', icon: '💰', gradient: 'from-purple-500 to-purple-300' },
-];
-
-/**
- * Props for the EnhancedNotificationSystem component.
- */
-interface EnhancedNotificationSystemProps {
-  apiEndpoint?: string; // Optional API endpoint for sending notifications
-}
 
 /**
  * Main component for the smart notification system.
  */
-const EnhancedNotificationSystem: React.FC<EnhancedNotificationSystemProps> = ({ }) => {
+const EnhancedNotificationSystem: React.FC = ({ }) => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
@@ -56,7 +46,7 @@ const EnhancedNotificationSystem: React.FC<EnhancedNotificationSystemProps> = ({
   const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([]);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
-  const [history, setHistory] = useState<NotificationHistory[]>([]);
+  const [history, setHistory] = useState<Notification[]>([]);
   const [searchText, setSearchText] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
 
@@ -68,7 +58,7 @@ const EnhancedNotificationSystem: React.FC<EnhancedNotificationSystemProps> = ({
   const [scheduleDate, setScheduleDate] = useState<string | null>(null);
 
   const recipients = useSelector(selectMergeStudentsWithScores);
-
+  const dispatch = useDispatch<AppDispatch>();
   // Update current time every minute
   useEffect(() => {
     const timer = setInterval(() => {
@@ -158,20 +148,19 @@ const EnhancedNotificationSystem: React.FC<EnhancedNotificationSystemProps> = ({
 
     setIsLoading(true);
     try {
-      const notification: NotificationHistory = {
-        id: Math.random().toString(36).substr(2, 9),
+      const payload: SendNotificationByAcademic = {
         type: notificationType,
-        priority,
-        recipients: selectedRowKeys.map(String),
-        timestamp: scheduleDate || new Date().toISOString(),
-        readRate: Math.floor(Math.random() * 100),
-        deliveryStatus: 'sent',
+        body: customMessage,
         channels: channels,
+        priority: priority,
+        recipients: selectedRowKeys as string[], // List of selected userName values
+        sendAll: selectedRowKeys.length === recipients.length, // True if all recipients are selected
+        timestamp: new Date().toISOString(), // Current timestamp in ISO format
       };
 
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
+      const notification: any = await dispatch(sendAcademicNotification({payload}));
+      console.log('Notification Response: ',notification);
       setHistory(prev => [notification, ...prev]);
       message.success({
         content: `Notification sent successfully to ${selectedRowKeys.length} recipients!`,
@@ -222,7 +211,7 @@ const EnhancedNotificationSystem: React.FC<EnhancedNotificationSystemProps> = ({
   }, [recipients]);
 
   return (
-    <div
+        <div
       className={`min-h-screen transition-colors duration-300 ${
         darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
       }`}
@@ -303,7 +292,7 @@ const EnhancedNotificationSystem: React.FC<EnhancedNotificationSystemProps> = ({
                       color={type.value === suggestedType ? type.color : 'default'}
                       className="mb-2"
                     >
-                      {type.icon} {type.label}
+                      <type.icon /> {type.label}
                     </Tag>
                   ))}
                 </div>

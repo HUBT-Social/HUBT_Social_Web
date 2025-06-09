@@ -2,78 +2,24 @@ import {
   CalendarOutlined,
   CheckCircleOutlined,
   EyeOutlined,
-  SendOutlined,
-  TrophyOutlined
+  SendOutlined
 } from '@ant-design/icons';
-import { Avatar, Badge, Button, Card, Col, List, Row, Space, Statistic, Tag, Typography } from 'antd';
+import { Avatar, Badge, Button, Card, Col, List, Row, Space, Tag, Typography } from 'antd';
 import { FC } from 'react';
-import { useNotificationContext } from '../../contexts/NotificationContext';
+import { useSelector } from 'react-redux';
+import { selectNotificationHistory } from '../../../../../store/slices/notificationSlice';
+import { Notification } from '../../../../../types/Notification';
 import { notificationTypeOptions } from '../../data/mockData';
 const { Text } = Typography;
 
 
 
-interface Notification {
-  id: number;
-  title: string;
-  body: string;
-  type: string;
-  recipients: number;
-  time: string;
-  status: string;
-}
-
 
 const DashboardTab: FC = () => {
-  const { stats, recentNotifications } = useNotificationContext();
-
+  const notificationHistorySelector = useSelector(selectNotificationHistory);
   return (
     <div className="space-y-6">
-      {/* Statistics Cards */}
-      <Row gutter={[24, 24]} className="animate-fade-in">
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 hover:shadow-lg transition-all">
-            <Statistic
-              title={<span className="text-blue-100">Total Sent</span>}
-              value={stats.totalSent}
-              prefix={<SendOutlined className="text-white" />}
-              valueStyle={{ color: 'white' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="bg-gradient-to-br from-green-500 to-green-600 text-white border-0 hover:shadow-lg transition-all">
-            <Statistic
-              title={<span className="text-green-100">Today's Sent</span>}
-              value={stats.todaySent}
-              prefix={<TrophyOutlined className="text-white" />}
-              valueStyle={{ color: 'white' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="bg-gradient-to-br from-purple-500 to-purple-600 text-white border-0 hover:shadow-lg transition-all">
-            <Statistic
-              title={<span className="text-purple-100">Delivery Rate</span>}
-              value={stats.deliveryRate}
-              suffix="%"
-              prefix={<CheckCircleOutlined className="text-white" />}
-              valueStyle={{ color: 'white' }}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} sm={12} lg={6}>
-          <Card className="bg-gradient-to-br from-orange-500 to-orange-600 text-white border-0 hover:shadow-lg transition-all">
-            <Statistic
-              title={<span className="text-orange-100">Read Rate</span>}
-              value={stats.readRate}
-              suffix="%"
-              prefix={<EyeOutlined className="text-white" />}
-              valueStyle={{ color: 'white' }}
-            />
-          </Card>
-        </Col>
-      </Row>
+      
 
       {/* Recent Notifications */}
       <Card 
@@ -87,7 +33,7 @@ const DashboardTab: FC = () => {
         className="shadow-sm hover:shadow-md transition-all"
       >
         <List
-          dataSource={recentNotifications}
+          dataSource={notificationHistorySelector}
           renderItem={(item: Notification) => {
             const typeOption = notificationTypeOptions.find((t: { value: string; }) => t.value === item.type) || notificationTypeOptions[0];
             const Icon = typeOption.icon;

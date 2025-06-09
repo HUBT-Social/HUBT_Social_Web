@@ -1,9 +1,7 @@
 import { useNotificationContext } from '../contexts/NotificationContext';
 
 const NotificationAlerts = () => {
-  const { notification } = useNotificationContext();
 
-  if (!notification) return null;
 
   return (
     <div className="fixed top-4 right-4 z-50">

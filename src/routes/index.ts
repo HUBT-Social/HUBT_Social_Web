@@ -1,5 +1,5 @@
 import React from 'react';
-import { RouteObject, useRoutes } from 'react-router-dom';
+import { Navigate, RouteObject, useRoutes } from 'react-router-dom';
 import ColorTestPage from '../components/ColorTest';
 import Layout from '../components/Layout';
 //import { extractTokenInfo } from '../helper/extratoken';
@@ -11,7 +11,6 @@ import DashboadPage from '../pages/dashboard/DashboadPage';
 import PracticeTestManagement from '../pages/dashboard/exams/PracticeTestManagement';
 import TeaturesLayout from '../pages/dashboard/features';
 import NotificationLayout from '../pages/dashboard/notification';
-import NotificationScreen from '../pages/dashboard/notification/NotificationScreen';
 import NotificationSystem from '../pages/dashboard/notification/NotificationSystem';
 import EnhancedNotificationSystem from '../pages/dashboard/notification/notification_academic/index';
 import SettingAndProfile from '../pages/dashboard/settings';
@@ -23,14 +22,15 @@ import {
   TeacherLayout
 } from '../pages/dashboard/teachers/index';
 import HomePage from '../pages/home/HomePage';
-//import { TokenManager } from '../config/axios';
+import { TokenManager } from '../config/axios';
+import NotificationScreen from '../pages/dashboard/notification/notification_dashboard/NotificationScreen';
 
 
 // Component bảo vệ route
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // if (!TokenManager.hasValidToken(null)) {
-  //   return React.createElement(Navigate, { to: '/login', replace: true });
-  // }
+  if (!TokenManager.hasValidToken(null)) {
+    return React.createElement(Navigate, { to: '/login', replace: true });
+  }
   return React.createElement(React.Fragment, null, children);
 };
 

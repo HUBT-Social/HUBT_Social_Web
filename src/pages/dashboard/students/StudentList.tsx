@@ -53,7 +53,9 @@ const StudentList: React.FC = () => {
       }
       const currentMargeStudent = store.getState().students.mergeStudentsWithScores.length
       console.log("Curent student marge: ",currentMargeStudent);
-      await dispatch(getAverageScore());
+      try
+      {
+          await dispatch(getAverageScore());
       await new Promise((resolve) => {
           const unsubscribe = store.subscribe(() => {
             const newCount = store.getState().students.mergeStudentsWithScores.length;
@@ -64,6 +66,8 @@ const StudentList: React.FC = () => {
             console.log("Curent std: ",newCount);
           });
         });
+      }catch{console.log("Loi lay diem nguoi dung")}
+      
       console.log("Before: ",store.getState().students.mergeStudentsWithScores.length);
     } catch (err) {
       console.error('Lỗi khi fetch dữ liệu sinh vien:', err);

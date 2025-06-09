@@ -50,7 +50,10 @@ export const CHAT_ENDPOINTS = {
 } as const;
 
 export const NOTIFICATION_ENDPOINT = {
-    POST_SENT_TO_ONE: '/api/notation/send-to-one',
-    POST_SENT_TO_MANY: '/api/notation/send-to-many',
-    POST_SENT_BY_CONDITION: '/api/notation/send-by-condition'
+    POST_SENT_TO_ONE: '/api/notification/send-to-one',
+    POST_SENT_TO_MANY: '/api/notification/send-to-many',
+    POST_SENT_BY_CONDITION: '/api/notification/send-by-condition',
+    POST_SEND_BY_ACADEMIC: '/api/notification/send-by-academic',
+    GET_HISTORY: '/api/notification/history',
+    DELETE_NOTIFICATION_ID: '/api/notification/delete/id=',
 } as const;

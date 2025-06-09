@@ -16,14 +16,7 @@ export interface User {
 /**
  * Represents a notification type with styling and icon information.
  */
-export interface NotificationTypeOption {
-  value: NotificationType;
-  label: string;
-  color: string;
-  bgColor: string;
-  icon: React.ReactNode;
-  gradient: string;
-}
+
 
 /**
  * Represents a recent notification sent in the system.
@@ -460,19 +453,6 @@ export interface Recipient {
   phone: string;
 }
 
-/**
- * Represents a notification history entry.
- */
-export interface NotificationHistory {
-  id: string;
-  type: NotificationType;
-  priority: NotificationPriority;
-  recipients: string[];
-  timestamp: string; // ISO format
-  readRate: number; // Percentage (0-100)
-  deliveryStatus: DeliveryStatusType;
-  channels: ChannelType[];
-}
 
 /**
  * Represents a saved group of recipients.
@@ -549,3 +529,48 @@ export type AcademicStatus =
 //     isValidUserRole(s.role)
 //   );
 // };
+
+// Define types for notification type optio
+
+// Define types for notifications (consistent with NotificationProvider.tsx)
+export interface Notification {
+  id: string;
+  title: string;
+  body: string;
+  type: string;
+  priority: string,
+  createdBy: string,
+  recipients: number;
+  time: string;
+  status: string;
+}
+
+// Define types for statistics
+export interface Stats {
+  totalSent: number;
+  todaySent: number;
+  deliveryRate: number;
+  readRate: number;
+  monthlyTrend: number[];
+  typeDistribution: {
+    [key: string]: number;
+  };
+}
+
+
+// Define types for notification templates
+export interface Template {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+}
+export interface SendNotificationByAcademic {
+  type: string;            // "warning", "event", ...
+  body: string;
+  priority: string;
+  recipients: string[];    // Danh sách userId
+  sendAll: boolean;
+  timestamp: string;       // ISO 8601: yyyy-MM-ddTHH:mm:ssZ
+  channels: string[];      // VD: ["email", "app"]
+}

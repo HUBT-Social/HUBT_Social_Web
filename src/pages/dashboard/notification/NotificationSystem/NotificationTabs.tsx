@@ -1,7 +1,6 @@
 import { DashboardOutlined, HistoryOutlined, PieChartOutlined, SendOutlined, SettingOutlined } from '@ant-design/icons';
 import { Tabs } from 'antd';
 import { useNotificationContext } from '../contexts/NotificationContext';
-import AnalyticsTab from './Analytics/AnalyticsTab';
 import ComposeTab from './Compose/ComposeTab';
 import DashboardTab from './Dashboard/DashboardTab';
 import HistoryTab from './History/HistoryTab';
@@ -56,19 +55,7 @@ const NotificationTabs = () => {
       >
         <HistoryTab />
       </TabPane>
-      
-      <TabPane
-        tab={
-          <span className="flex items-center space-x-2">
-            <PieChartOutlined />
-            <span>Analytics</span>
-          </span>
-        }
-        key="analytics"
-      >
-        <AnalyticsTab />
-      </TabPane>
-      
+
       <TabPane
         tab={
           <span className="flex items-center space-x-2">

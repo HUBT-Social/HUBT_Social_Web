@@ -20,6 +20,9 @@ import { Button, Card, Col, Collapse, DatePicker, Input, Radio, Row, Select, Spa
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import { ChangeEvent, DragEvent, FC, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { NotificationPayload, sendNotification } from '../../../../../store/slices/notificationSlice';
+import { AppDispatch } from '../../../../../store/store';
 import { useNotificationContext } from '../../contexts/NotificationContext';
 import { notificationTypeOptions } from '../../data/mockData';
 import RecipientSelector from './RecipientSelector';
@@ -47,14 +50,16 @@ const ComposeTab: FC = () => {
     userNames,
     errors, setErrors,
     isLoading, setIsLoading,
-    setNotification,
     setIsPreviewVisible,
     setTemplateMode,
     setActiveTab
   } = useNotificationContext();
 
+  const dispatch = useDispatch<AppDispatch>();
+
   // State for drag and drop
   const [isDragging, setIsDragging] = useState<boolean>(false);
+
 
   // Handle image upload
   const handleImageUpload = (event: { target: { files: any } }) => {
@@ -132,7 +137,7 @@ const handleSubmit = async () => {
   setIsLoading(true);
 
   // Tạo payload để submit
-  const payload = {
+  const payload : NotificationPayload = {
     title: title.trim(),
     body: body.trim(),
     type: type,
@@ -169,20 +174,10 @@ const handleSubmit = async () => {
   try {
     // Simulate API call
     console.log('Sending notification...');
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
+    const response = await dispatch(sendNotification({payload}));
+    console.log(response);
     console.log('✅ Notification sent successfully!');
     
-    setNotification({
-      id: Date.now(),
-      title: payload.title,
-      body: payload.body,
-      type: payload.type,
-      recipients: 111, // Mock recipients count
-      time: new Date().toLocaleString(),
-      status: 'sent',
-    });
-
     // Reset form
     setTitle('');
     setBody('');
@@ -199,15 +194,6 @@ const handleSubmit = async () => {
   } catch (error) {
     console.error('❌ Failed to send notification:', error);
     
-    setNotification({
-      id: Date.now(),
-      title: payload.title,
-      body: payload.body,
-      type: payload.type,
-      recipients: 0,
-      time: new Date().toLocaleString(),
-      status: 'failed',
-    });
   } finally {
     setIsLoading(false);
     console.log('Submit process completed');
