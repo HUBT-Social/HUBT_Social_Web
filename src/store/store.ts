@@ -17,6 +17,7 @@ import studentReducer from './slices/studentSlice';
 import notificationReducer from './slices/notificationSlice';
 import examReducer from './slices/examSlice';
 import settingReducer from './slices/settingSlice';
+import scheduleReducer from './slices/scheduleSlice';
 
 const rootReducer = combineReducers({
   authUser: authUserReducer,
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   notification: notificationReducer,
   exams: examReducer,
   settings: settingReducer,
+  schedule: scheduleReducer
 });
 
 const persistConfig = {

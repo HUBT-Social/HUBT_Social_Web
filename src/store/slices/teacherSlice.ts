@@ -8,29 +8,56 @@ import {
 import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { RootState } from '../store';
-import { UserInfo } from '../../types/User';
 import instance from '../../config/axios';
 import { getTokensFromLocalStorage } from '../../helper/tokenHelper';
+import { UserInfo } from '../../types/user';
+
+
+// Interface for filters
+interface FilterParams {
+  faculty?: string[];
+  khoa?: string[];
+  class?: string[];
+  gender?: number[];
+  status?: string[];
+}
+
 
 // Interface for state
 interface TeacherState {
   loading: boolean;
   teachers: UserInfo[];
-  filteredTeachers: UserInfo[];
-  isLoaded: boolean;
   error: string | null;
+  filters: FilterParams;
+  isLoaded: boolean;
+  currentPage: number;
+  hasMore:  boolean;
 }
 
 // Initial state
 const initialState: TeacherState = {
   loading: false,
   teachers: [],
-  filteredTeachers: [],
-  isLoaded: false,
   error: null,
+  filters: {},
+  isLoaded: false,
+  currentPage: 1,
+  hasMore: true
 };
 
-interface GetUserResponse {
+// Interface for API params
+interface GetTeachersParams {
+  page: number;
+  pageSize?: number;
+  faculty?: string[];
+  khoa?: string[];
+  class?: string[];
+  gender?: number[];
+  status?: string[];
+}
+
+// Interface for API response
+interface GetTeachersResponse {
   aUserDTOs: UserInfo[];
   hasMore: boolean;
   message: string;
@@ -40,22 +67,66 @@ interface GetUserResponse {
 // Async Thunks
 // ========================
 
-// Fetch teachers by page
+// Fetch teachers with pagination and filters
 export const getTeachers = createAsyncThunk<
-  GetUserResponse,
-  number,
+  {response: GetTeachersResponse, isAppend: boolean},
+  {params: GetTeachersParams, currentFilter: FilterParams},
   { rejectValue: string }
->('teachers/get', async (page, { rejectWithValue }) => {
+>('teachers/get', async ({ params, currentFilter }, { rejectWithValue}) => {
   try {
-    const res = await instance.USER_SERVICE.get(`/api/user/get-user-by-role?roleName=TEACHER&page=${page}`);
-    console.log("Teacher: ", res.aUserDTOs.length);
-    return res as GetUserResponse;
+    // Build query parameters
+    const queryParams = new URLSearchParams();
+    queryParams.append('roleName', 'TEACHER');
+    let isAppend = true;
+
+    if( currentFilter.class !== params.class || 
+        currentFilter.faculty !== params.faculty ||
+        currentFilter.gender !== params.gender ||
+        currentFilter.khoa !== params.khoa 
+    ){
+      queryParams.append('page', '1');
+      isAppend = false;
+    }else{
+      queryParams.append('page', params.page.toString());
+    }
+    
+
+    // Add filters
+    if (params.faculty?.length) {
+      params.faculty.forEach(f => queryParams.append('faculty', f));
+    }
+    if (params.khoa?.length) {
+      params.khoa.forEach(k => queryParams.append('khoa', k));
+    }
+    if (params?.class?.length) {
+      params.class.forEach(c => queryParams.append('class', c));
+    }
+    if (params.gender?.length) {
+      params.gender.forEach(g => queryParams.append('gender', g.toString()));
+    }
+    if (params.status?.length) {
+      params.status.forEach(s => queryParams.append('status', s));
+    }
+
+
+    const res = await instance.USER_SERVICE.get(`/api/user/get-user-by-role?${queryParams.toString()}`);
+    
+    console.log("Teachers loaded:", res.aUserDTOs.length);
+    
+    // Return with pagination info
+    return { response: {
+      aUserDTOs: res.aUserDTOs || [],
+      hasMore: res.hasMore || false,
+      message: res.message || '',
+    } as GetTeachersResponse,
+    isAppend: isAppend};
   } catch (error: any) {
     return rejectWithValue(
       error.response?.data?.message || error.message || 'Không thể tải danh sách giáo viên'
     );
   }
 });
+
 
 // Add a new teacher
 export const addTeacher = createAsyncThunk<UserInfo, UserInfo, { rejectValue: string }>(
@@ -83,8 +154,8 @@ export const setTeacher = createAsyncThunk<UserInfo | null, UserInfo, { rejectVa
       const token = getTokensFromLocalStorage();
       if (!token) return rejectWithValue('Không tìm thấy token xác thực');
 
-      const res = await instance.USER_SERVICE.put('/api/user/update-user-admin',updatedTeacher);
-      return res
+      const res = await instance.USER_SERVICE.put('/api/user/update-user-admin', updatedTeacher);
+      return res;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || error.message || 'Cập nhật thông tin thất bại'
@@ -123,49 +194,46 @@ const teacherSlice = createSlice({
     },
     setTeachers(state, action: PayloadAction<UserInfo[]>) {
       state.teachers = action.payload;
-      state.filteredTeachers = action.payload;
     },
-    setFilteredTeachers(state, action: PayloadAction<UserInfo[]>) {
-      state.filteredTeachers = action.payload;
+    setTeachersFilters(state, action: PayloadAction<FilterParams>) {
+      state.filters = action.payload;
     },
-    setIsLoaded(state, action: PayloadAction<boolean>) {
-      state.isLoaded = action.payload;
+    clearTeachers(state) {
+      state.teachers = [];
+      state.filters = {};
+      state.isLoaded = false;
     },
     hydrate(state, action: PayloadAction<any>) {
       const persisted = action.payload?.teachers;
       if (persisted) {
         state.teachers = persisted.teachers || [];
-        state.filteredTeachers = persisted.filteredTeachers || [];
-        state.isLoaded = persisted.isLoaded || false;
+        state.filters = persisted.filters || {};
       }
     },
-    clearTeachers(state) {
-      state.teachers = [];
-      state.filteredTeachers = [];
-      state.isLoaded = false;
+    setLoaded(state, action: PayloadAction<boolean>) {
+      state.isLoaded = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      // GET
-      .addCase(getTeachers.fulfilled, (state, action: PayloadAction<GetUserResponse>) => {
+      // GET with pagination
+      .addCase(getTeachers.fulfilled, (state, action: PayloadAction<{response: GetTeachersResponse, isAppend: boolean}>) => {
         console.log('Fetched teachers:', {
-          usersReceived: action.payload.aUserDTOs.length,
-          currentTeachersCount: state.teachers.length,
+          usersReceived: action.payload.response.aUserDTOs.length,
         });
-
-        const newTeachers = action.payload.aUserDTOs.filter(
-          (user) => !state.teachers.some((t) => t.userName === user.userName)
-        );
-        state.teachers = [...state.teachers, ...newTeachers];
-        state.filteredTeachers = [...state.filteredTeachers, ...newTeachers];
+        if(action.payload.isAppend){
+          state.teachers = [...state.teachers,...action.payload.response.aUserDTOs];
+        }else{
+          state.teachers = action.payload.response.aUserDTOs;
+        }
         state.loading = false;
-        state.isLoaded = true;
       })
       // ADD
       .addCase(addTeacher.fulfilled, (state, action) => {
-        state.teachers = [...state.teachers, action.payload];
-        state.filteredTeachers = [...state.filteredTeachers, action.payload];
+        // Add to current page if there's space, otherwise just update total
+        if (state.teachers.length) {
+          state.teachers = [...state.teachers, action.payload];
+        }
         state.loading = false;
       })
       // UPDATE
@@ -176,18 +244,12 @@ const teacherSlice = createSlice({
         state.teachers = state.teachers.map((t) =>
           t.userName === updated.userName ? updated : t
         );
-        state.filteredTeachers = state.filteredTeachers.map((t) =>
-          t.userName === updated.userName ? updated : t
-        );
         state.loading = false;
       })
       // DELETE
       .addCase(deleteTeacher.fulfilled, (state, action) => {
         const username = action.payload;
         state.teachers = state.teachers.filter((user) => user.userName !== username);
-        state.filteredTeachers = state.filteredTeachers.filter(
-          (user) => user.userName !== username
-        );
         state.loading = false;
       })
       // GLOBAL MATCHERS
@@ -208,27 +270,32 @@ const teacherSlice = createSlice({
 const persistConfig = {
   key: 'teachers',
   storage,
+  // Don't persist loading state
+  blacklist: ['loading', 'error'],
 };
 
 export const persistedTeacherReducer = persistReducer(persistConfig, teacherSlice.reducer);
 
 // ========================
-// Export
+// Export Actions
 // ========================
 export const {
   clearError,
-  setFilteredTeachers,
   setTeachers,
-  hydrate,
-  setIsLoaded,
+  setTeachersFilters,
   clearTeachers,
+  hydrate,
+  setLoaded 
 } = teacherSlice.actions;
 
+// ========================
 // Selectors
+// ========================
 export const selectTeachers = (state: RootState) => state.teachers.teachers;
-export const selectTeachersFiltered = (state: RootState) => state.teachers.filteredTeachers;
-export const selectIsLoaded = (state: RootState) => state.teachers.isLoaded;
+export const selectHasMore = (state: RootState) => state.teachers.hasMore;
 export const selectTeachersLoading = (state: RootState) => state.teachers.loading;
 export const selectTeachersError = (state: RootState) => state.teachers.error;
+export const selectTeachersFilters = (state: RootState) => state.teachers.filters;
+export const selectCurrentPage = (state: RootState) => state.teachers.currentPage;
 
 export default persistedTeacherReducer;

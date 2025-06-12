@@ -54,6 +54,7 @@ export const NOTIFICATION_ENDPOINT = {
     POST_SENT_TO_MANY: '/api/notification/send-to-many',
     POST_SENT_BY_CONDITION: '/api/notification/send-by-condition',
     POST_SEND_BY_ACADEMIC: '/api/notification/send-by-academic',
+    POST_SEND_BY_USERNAMES: '/api/notification/send-to-multi-username',
     GET_HISTORY: '/api/notification/history',
     DELETE_NOTIFICATION_ID: '/api/notification/delete/id=',
 } as const;

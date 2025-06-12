@@ -6,7 +6,7 @@ import {
   NotificationOutlined,
   MessageOutlined,
 } from '@ant-design/icons';
-import { UserInfo } from '../../../../types/User';
+import { UserInfo } from '../../../../types/user';
 
 interface TeacherAvatarProps {
   teacher: UserInfo;

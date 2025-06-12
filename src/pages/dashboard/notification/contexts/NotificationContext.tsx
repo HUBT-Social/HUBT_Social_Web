@@ -1,20 +1,11 @@
 import type { Dayjs } from 'dayjs'; // Thêm import Dayjs
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { UserInfo } from '../../../../types/User';
+import { UserInfo } from '../../../../types/user';
 import {Notification} from '../../../../types/Notification';
 
 
 
-interface Stats {
-  totalSent: number;
-  todaySent: number;
-  deliveryRate: number;
-  readRate: number;
-  monthlyTrend: number[];
-  typeDistribution: {
-    [key: string]: number;
-  };
-}
+
 
 interface Template {
   id: string;
@@ -189,7 +180,7 @@ export const NotificationProvider: React.FC<NotificationProviderProps> = ({ chil
     filterType,
     setFilterType,
     users: [],
-    setUsers: function (value: React.SetStateAction<UserInfo[]>): void {
+    setUsers: function (): void {
       throw new Error('Function not implemented.');
     },
   };

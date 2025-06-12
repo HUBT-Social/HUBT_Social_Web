@@ -10,6 +10,7 @@ import {
   StarOutlined,
   BellOutlined,
   CloseOutlined,
+  CalendarOutlined,
 } from '@ant-design/icons';
 import { Menu, Tag } from 'antd';
 import { useEffect} from 'react';
@@ -45,6 +46,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, onToggleSidebar }) => 
     if (path.includes('/dashboard/students')) return '/dashboard/students';
     if (path.includes('/dashboard/notition')) return '/dashboard/notition';
     if (path.includes('/dashboard/billing')) return '/dashboard/billing';
+    if (path.includes('/dashboard/schedule')) return '/dashboard/schedule';
     if (path.includes('/dashboard/settings')) return '/dashboard/settings';
     if (path.includes('/dashboard/exams')) return '/dashboard/exams';
     if (path.includes('/dashboard/features')) return '/dashboard/features';
@@ -103,6 +105,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isSidebarOpen, onToggleSidebar }) => 
 
         <Menu.Item key="/dashboard/notition" icon={<BellOutlined />}>
           Notification
+        </Menu.Item>
+
+        <Menu.Item key="/dashboard/schedule" icon={<CalendarOutlined />}>
+          Schedule
         </Menu.Item>
 
         <Menu.Item key="/dashboard/billing" icon={<CreditCardOutlined />}>

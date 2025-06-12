@@ -228,6 +228,80 @@ export const sendAcademicNotification = createAsyncThunk<
   }
 );
 
+export interface EventNotificationTimeTable {
+  title: string;
+  body: string;
+  type: string; // Restrict to specific types
+  userNames: string[];
+}
+
+export const sendEventTimeTable = createAsyncThunk<
+  void,
+  EventNotificationTimeTable,
+  { rejectValue: string }
+>(
+  'notification/sendEventTimeTable',
+  async ({ title, body, type, userNames }, { rejectWithValue }) => {
+    // Validation
+    if (!type?.trim()) {
+      return rejectWithValue('Loại thông báo không được để trống.');
+    }
+    if (!body?.trim()) {
+      return rejectWithValue('Nội dung thông báo không được để trống.');
+    }
+    if (!userNames || userNames.length === 0) {
+      return rejectWithValue('Vui lòng chọn người nhận.');
+    }
+    if (!title?.trim()) {
+      return rejectWithValue('Tiêu đề thông báo không được để trống.');
+    }
+
+    const payload: EventNotificationTimeTable = { title, body, type, userNames };
+
+    // Retry logic
+    const maxRetries = 3;
+    let attempt = 0;
+
+    while (attempt < maxRetries) {
+      try {
+        await instance.NOTIFICATION_SERVICE.post(
+          NOTIFICATION_ENDPOINT.POST_SEND_BY_USERNAMES,
+          payload,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        return; // Success
+      } catch (error: any) {
+        attempt++;
+        // Detailed error parsing
+        const errorMessage =
+          error.response?.data?.message ||
+          error.response?.data?.title ||
+          error.message ||
+          'Đã có lỗi xảy ra khi gửi thông báo.';
+        
+        // Log error details for debugging
+        console.error(`Attempt ${attempt} failed:`, {
+          status: error.response?.status,
+          data: error.response?.data,
+          message: errorMessage,
+        });
+
+        if (attempt === maxRetries) {
+          return rejectWithValue(errorMessage);
+        }
+
+        // Exponential backoff
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.pow(2, attempt) * 1000)
+        );
+      }
+    }
+  }
+);
 
 // Notification slice
 const notificationSlice = createSlice({

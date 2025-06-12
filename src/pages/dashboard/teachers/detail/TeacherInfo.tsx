@@ -1,6 +1,6 @@
 import { Button } from 'antd';
 import React from 'react';
-import { UserInfo } from '../../../../types/User';
+import { UserInfo } from '../../../../types/user';
 
 interface TeacherInfoProps {
   teacher: UserInfo;

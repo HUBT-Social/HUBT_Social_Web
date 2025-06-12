@@ -1,4 +1,4 @@
-import {UserToken,LoginResponse} from '../types/User'
+import {UserToken,LoginResponse} from '../types/user'
 
 
 // Hàm để lưu token vào localStorage

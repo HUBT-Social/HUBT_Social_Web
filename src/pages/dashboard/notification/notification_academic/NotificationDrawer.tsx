@@ -1,8 +1,8 @@
-import React from 'react';
-import { Drawer, Alert, Select, Space, Tag, Progress, Button, DatePicker, Input, Typography } from 'antd';
 import { SendOutlined } from '@ant-design/icons';
-import { notificationTypes, priorities, channelOptions } from '../constants/notificationConstants';
+import { Alert, Button, DatePicker, Drawer, Input, Progress, Select, Space, Tag, Typography } from 'antd';
+import React from 'react';
 import { ChannelType, NotificationPriority, NotificationType } from '../../../../types/Notification';
+import { channelOptions, notificationTypes, priorities } from '../constants/notificationConstants';
 
 const { Text } = Typography;
 const { Option } = Select;
@@ -45,6 +45,11 @@ const NotificationDrawer: React.FC<NotificationDrawerProps> = ({
   isLoading,
   darkMode
 }) => {
+  // useEffect(()=>{
+  //   console.log("Message: ",customMessage);
+  // },[customMessage]);
+
+
   return (
     <Drawer
       title="✨ Tạo thông báo mới"

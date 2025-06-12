@@ -24,8 +24,8 @@ import UsersManagement from './UsersManagement';
 const NotificationScreen: React.FC = () => {
   const [activeMenu, setActiveMenu] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [editingNotification, setEditingNotification] = useState<UINotification | null>(null);
+  const [, setShowCreateModal] = useState(false);
+  const [, setEditingNotification] = useState<UINotification | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const notifications = useSelector(selectNotificationHistory) as UINotification[];

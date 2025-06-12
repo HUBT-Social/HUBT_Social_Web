@@ -1,109 +1,108 @@
-import { Input, Select, Row, Col, Button } from 'antd';
-import React, { useEffect, useState } from 'react';
-import StudentAdd from './StudentAdd';
+import { Button, Col, Input, Row } from 'antd';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { 
+  getStudents, 
+  selectStudents, 
+  setFilter, 
+  setStudentsFilters,
+  clearStudents 
+} from '../store/slices/studentSlice';
 import { AppDispatch } from '../store/store';
-import { selectStudents, setFilteredStudents } from '../store/slices/studentSlice';
-
-const { Option } = Select;
+import StudentAdd from './StudentAdd';
 
 const StudentFilter: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const students = useSelector(selectStudents);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [genderFilter, setGenderFilter] = useState<number | null>(-1);
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [isEmptyResult, setIsEmptyResult] = useState(false);
 
+  // Client-side filtering effect
   useEffect(() => {
-    applyFilters();
-  }, [searchTerm, genderFilter, statusFilter, students]);
-
-  const applyFilters = () => {
-    let results = [...students];
-
-    // Tìm theo mã SV, họ tên, email, lớp
-    if (searchTerm.trim() !== '') {
-      const lowerSearch = searchTerm.toLowerCase();
-      results = results.filter(student =>
-        student.userName?.toLowerCase().includes(lowerSearch) ||
-        `${student.lastName} ${student.firstName}`.toLowerCase().includes(lowerSearch) ||
-        student.email?.toLowerCase().includes(lowerSearch) ||
-        student.className?.toLowerCase().includes(lowerSearch)
-      );
+    if (!searchTerm.trim()) {
+      // No search term - show all students
+      dispatch(setStudentsFilters(students));
+      setIsEmptyResult(false);
+      return;
     }
 
-    // Giới tính
-    if (genderFilter !== null && genderFilter !== -1) {
-      results = results.filter(student => student.gender === genderFilter);
+    // Filter students client-side
+    const lowerSearch = searchTerm.toLowerCase();
+    const filteredResults = students.filter(student => 
+      student.userName?.toLowerCase().includes(lowerSearch) ||
+      student.email?.toLowerCase().includes(lowerSearch) ||
+      `${student.lastName} ${student.firstName}`.toLowerCase().includes(lowerSearch)
+    );
+
+    setIsEmptyResult(filteredResults.length === 0);
+    dispatch(setStudentsFilters(filteredResults));
+  }, [searchTerm, students, dispatch]);
+
+  // Handle input change
+  const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    dispatch(setFilter(value)); // Fix: Actually dispatch the setFilter action
+  }, [dispatch]);
+
+  // Handle client-side search (Enter key or search button)
+  const handleClientSearch = useCallback(() => {
+    // The filtering is already handled by the useEffect above
+    // This function exists for consistency with the UI
+  }, []);
+
+  // Handle server-side search
+  const handleServerSearch = useCallback(async () => {
+    try {
+      // Clear existing data and search on server
+      dispatch(clearStudents());
+      
+      await dispatch(getStudents({
+            searchTerm: searchTerm,
+            page: 1,
+            isLoadMore: false
+      })).unwrap();
+    } catch (error) {
+      console.error('Server search failed:', error);
     }
-
-    // Trạng thái
-    if (statusFilter !== '') {
-      results = results.filter(student => student.status === statusFilter);
-    }
-
-    dispatch(setFilteredStudents(results));
-  };
-
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleGenderSelectChange = (gender: number) => {
-    setGenderFilter(gender);
-  };
-
-  const handleStatusSelectChange = (status: string) => {
-    setStatusFilter(status);
-  };
-
-  const handleSearch = () => {
-    applyFilters();
-  };
+  }, [dispatch, searchTerm]);
 
   return (
     <>
       <StudentAdd />
       <Row gutter={16} style={{ marginBottom: 24 }}>
-        <Col span={8}>
+        <Col span={20}>
           <Input
-            placeholder="Tìm theo Mã SV, Họ tên, Email, Lớp"
+            placeholder="Tìm theo Mã SV, Email, hoặc Họ tên"
             value={searchTerm}
             onChange={handleSearchInputChange}
-            onPressEnter={handleSearch}
+            onPressEnter={handleClientSearch}
+            allowClear
+            onClear={() => setSearchTerm('')}
           />
         </Col>
-        <Col span={6}>
-          <Select
-            value={genderFilter}
-            onChange={handleGenderSelectChange}
-            style={{ width: '100%' }}
-          >
-            <Option value={-1}>Tất cả giới tính</Option>
-            <Option value={1}>Nam</Option>
-            <Option value={2}>Nữ</Option>
-            <Option value={0}>Khác</Option>
-          </Select>
-        </Col>
-        <Col span={6}>
-          <Select
-            value={statusFilter}
-            onChange={handleStatusSelectChange}
-            style={{ width: '100%' }}
-          >
-            <Option value="">Tất cả trạng thái</Option>
-            <Option value="Active">Hoạt động</Option>
-            <Option value="Inactive">Không hoạt động</Option>
-            <Option value="Pending">Đang chờ</Option>
-          </Select>
-        </Col>
         <Col span={4} className="flex items-center">
-          <Button type="primary" onClick={handleSearch}>
+          <Button type="primary" onClick={handleClientSearch}>
             Tìm kiếm
           </Button>
         </Col>
       </Row>
+      
+      {isEmptyResult && searchTerm.trim() !== '' && (
+        <Row style={{ marginBottom: 16 }}>
+          <Col span={24}>
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+              <p className="text-yellow-800 mb-2">
+                Không tìm thấy kết quả trong danh sách hiện tại ({students.length} sinh viên).
+              </p>
+              <Button type="default" onClick={handleServerSearch}>
+                Tìm kiếm trên server
+              </Button>
+            </div>
+          </Col>
+        </Row>
+      )}
     </>
   );
 };

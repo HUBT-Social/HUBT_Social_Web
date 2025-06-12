@@ -1,38 +1,39 @@
 import React, { useMemo } from 'react';
 import { Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import moment from 'moment';
-import { UserInfo } from '../../../types/User';
-
+import { UserInfo } from '../../../types/user';
 
 interface Props {
   teachers: UserInfo[];
-  onClickAction: (key: string) => any;
+  onClickAction: (key: string) => void;
 }
 
-const TeacherTable: React.FC<Props> = ({ teachers,onClickAction }) => {
+const TeacherTable: React.FC<Props> = ({ teachers, onClickAction}) => {
   const columns: ColumnsType<UserInfo> = useMemo(
     () => [
       {
         title: 'Tên giáo viên',
         key: 'fullName',
-        sorter: (a: UserInfo, b: UserInfo) => {
-          const nameA = `${a.lastName} ${a.firstName}`.toLowerCase();
-          const nameB = `${b.lastName} ${b.firstName}`.toLowerCase();
-          return nameA.localeCompare(nameB);
-        },
+        sorter: (a: UserInfo, b: UserInfo) =>
+          `${a.lastName || ''} ${a.firstName || ''}`
+            .toLowerCase()
+            .localeCompare(`${b.lastName || ''} ${b.firstName || ''}`.toLowerCase()),
         render: (_: any, record: UserInfo) =>
-          `${record.lastName} ${record.firstName}`.trim(),
+          `${record.lastName || ''} ${record.firstName || ''}`.trim() || 'Chưa cập nhật',
       },
       {
         title: 'Email',
         dataIndex: 'email',
         key: 'email',
+        render: (email: string) => (
+          <span className="text-blue-600 hover:underline">{email || 'Chưa cập nhật'}</span>
+        ),
       },
       {
         title: 'Số điện thoại',
         dataIndex: 'phoneNumber',
         key: 'phoneNumber',
+        render: (phoneNumber: string) => phoneNumber || 'Chưa cập nhật',
       },
       {
         title: 'Giới tính',
@@ -41,36 +42,43 @@ const TeacherTable: React.FC<Props> = ({ teachers,onClickAction }) => {
         filters: [
           { text: 'Nam', value: 1 },
           { text: 'Nữ', value: 0 },
+          { text: 'Chưa xác định', value: -1 },
         ],
         onFilter: (value, record: UserInfo) =>
-          record.gender === value,
-        render: (gender: number) =>
-          <Tag color={gender === 1 ? 'blue' : 'pink'}>{gender === 1 ? 'Nam' : 'Nữ'}</Tag>
-      },
-      {
-        title: 'Ngày sinh',
-        dataIndex: 'dateOfBirth',
-        key: 'dateOfBirth',
-        render: (dob: string) =>
-          dob && dob !== '0001-01-01T00:00:00'
-            ? moment(dob).format('DD/MM/YYYY')
-            : 'Chưa cập nhật',
+          record.gender === value || (value === -1 && record.gender == null),
+        render: (gender: number | undefined) => (
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${
+              gender === 1
+                ? 'bg-blue-100 text-blue-800'
+                : gender === 0
+                ? 'bg-pink-100 text-pink-800'
+                : 'bg-gray-100 text-gray-800'
+            }`}
+          >
+            {gender === 1 ? 'Nam' : gender === 0 ? 'Nữ' : 'Chưa xác định'}
+          </span>
+        ),
       },
       {
         title: 'Trạng thái',
         dataIndex: 'status',
         key: 'status',
-        filters: Array.from(
-          new Set(teachers.map(t => t.status).filter((status): status is string => Boolean(status)))
-        ).map(status => ({
-          text: status,
-          value: status,
-        })),
-        onFilter: (value, record: UserInfo) =>
-          record.status === value,
+        filters: [
+          { text: 'Hoạt động', value: 'Active' },
+          { text: 'Không hoạt động', value: 'Inactive' },
+        ],
+        onFilter: (value, record: UserInfo) => record.status === value,
         render: (status: string) => (
-          <Tag color={status === 'Active' ? 'green' : 'red'}>{status}</Tag>
+          <Tag color={status === 'Active' ? 'green' : 'red'}>
+            {status === 'Active' ? 'Hoạt động' : 'Không hoạt động'}
+          </Tag>
         ),
+      },
+      {
+        title: 'Khoa',
+        key: 'faculty',
+        render: () => <span className="text-gray-600">Chưa phân khoa</span>,
       },
     ],
     [teachers]
@@ -78,43 +86,16 @@ const TeacherTable: React.FC<Props> = ({ teachers,onClickAction }) => {
 
   return (
     <Table
-      dataSource={teachers}
+      className="hover:cursor-pointer"
       columns={columns}
+      dataSource={teachers} // Ensure max pageSize rows
       rowKey="userName"
+      pagination={{ pageSize: 8 }} // Pagination handled in TeacherList
       onRow={(record: UserInfo) => ({
         onClick: () => onClickAction(record.userName),
-        })}
+      })}
     />
-
   );
 };
 
 export default TeacherTable;
-
-// Ví dụ sử dụng:
-/*
-const teachersData: UserInfo[] = [
-  {
-    userName: "teacher001",
-    firstName: "Văn A",
-    lastName: "Nguyễn",
-    email: "nguyenvana@school.edu.vn",
-    phoneNumber: "0123456789",
-    gender: 1,
-    dateOfBirth: "1985-05-15T00:00:00",
-    status: "Active"
-  },
-  {
-    userName: "teacher002",
-    firstName: "Thị B",
-    lastName: "Trần",
-    email: "tranthib@school.edu.vn", 
-    phoneNumber: "0987654321",
-    gender: 0,
-    dateOfBirth: "0001-01-01T00:00:00", // Chưa cập nhật
-    status: "Inactive"
-  }
-];
-
-<TeacherTable teachers={teachersData} />
-*/

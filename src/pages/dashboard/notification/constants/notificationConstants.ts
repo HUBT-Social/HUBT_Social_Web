@@ -43,7 +43,7 @@ export const priorities = [
 ];
 
 export const channelOptions = [
-  { value: 'Push', label: 'Push Notification', icon: '🔔' },
-  { value: 'Email', label: 'Email', icon: '📧' },
-  { value: 'SMS', label: 'SMS', icon: '💬' }
+  { value: 'push', label: 'Push Notification', icon: '🔔' },
+  { value: 'email', label: 'Email', icon: '📧' },
+  { value: 'sms', label: 'SMS', icon: '💬' }
 ];

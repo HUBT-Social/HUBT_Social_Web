@@ -1,17 +1,16 @@
 import { ClockCircleOutlined, FilterOutlined, SearchOutlined, UsergroupAddOutlined } from '@ant-design/icons';
 import { Avatar, Badge, Button, Card, Input, Select, Tag, Timeline, Typography } from 'antd';
-import React, { FC, useState, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch } from '../../../../../store/store';
 import {
   deleteNotification,
-  getHistoryNotification,
-  selectNotificationHistory,
-  selectNotificationLoading,
   selectNotificationError,
+  selectNotificationHistory,
+  selectNotificationLoading
 } from '../../../../../store/slices/notificationSlice';
-import { UINotification } from '../../notification_dashboard/notification-screen.types';
+import { AppDispatch } from '../../../../../store/store';
 import { notificationTypeOptions } from '../../data/mockData';
+import { UINotification } from '../../notification_dashboard/notification-screen.types';
 
 const { Title, Text } = Typography;
 

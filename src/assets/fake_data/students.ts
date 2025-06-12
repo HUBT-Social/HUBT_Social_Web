@@ -1,5 +1,5 @@
 
-import { UserInfo } from "../../types/User";
+import { UserInfo } from "../../types/user";
 
 export const students: UserInfo[] = [
   {

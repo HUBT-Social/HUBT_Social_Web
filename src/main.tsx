@@ -1,12 +1,11 @@
-import React from 'react';
+import AOS from 'aos';
 import ReactDOM from 'react-dom/client';
 import { Provider } from 'react-redux';
 import { BrowserRouter } from 'react-router-dom';
-import './index.css';
-import App from './App';
-import { store, persistor } from './store/store'; // Import store and persistor
 import { PersistGate } from 'redux-persist/integration/react'; // Import PersistGate
-import AOS from 'aos';
+import App from './App';
+import './index.css';
+import { persistor, store } from './store/store'; // Import store and persistor
 
 AOS.init({
   duration: 1000, // Thời gian hiệu ứng (ms)
@@ -15,7 +14,7 @@ AOS.init({
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
 
 root.render(
-  <React.StrictMode>
+  //<React.StrictMode>
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
         <BrowserRouter>
@@ -23,5 +22,5 @@ root.render(
         </BrowserRouter>
       </PersistGate>
     </Provider>
-  </React.StrictMode>
+ // </React.StrictMode>
 );

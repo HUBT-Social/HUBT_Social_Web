@@ -8,7 +8,6 @@ import LoginPage from '../pages/auth/LoginPage';
 import SignUpPage from '../pages/auth/SignUpPage';
 import BillLayout from '../pages/dashboard/billing';
 import DashboadPage from '../pages/dashboard/DashboadPage';
-import PracticeTestManagement from '../pages/dashboard/exams/PracticeTestManagement';
 import TeaturesLayout from '../pages/dashboard/features';
 import NotificationLayout from '../pages/dashboard/notification';
 import NotificationSystem from '../pages/dashboard/notification/NotificationSystem';
@@ -24,6 +23,8 @@ import {
 import HomePage from '../pages/home/HomePage';
 import { TokenManager } from '../config/axios';
 import NotificationScreen from '../pages/dashboard/notification/notification_dashboard/NotificationScreen';
+import PracticeTestManagement from '../pages/dashboard/exams';
+import TimetableApp from '../pages/dashboard/schedule/ScheduleTimeline';
 
 
 // Component bảo vệ route
@@ -81,6 +82,7 @@ const privateRoutes: RouteObject[] = [
         ],
       },
       { path: 'settings', element: React.createElement(SettingAndProfile) },
+      { path: 'schedule', element: React.createElement(TimetableApp) },
       { path: 'billing', element: React.createElement(BillLayout) },
       { path: 'exams', element: React.createElement(PracticeTestManagement) },
       { path: 'features', element: React.createElement(TeaturesLayout) },

@@ -1,4 +1,4 @@
-import { DashboardOutlined, HistoryOutlined, PieChartOutlined, SendOutlined, SettingOutlined } from '@ant-design/icons';
+import { DashboardOutlined, HistoryOutlined, SendOutlined, SettingOutlined } from '@ant-design/icons';
 import { Tabs } from 'antd';
 import { useNotificationContext } from '../contexts/NotificationContext';
 import ComposeTab from './Compose/ComposeTab';

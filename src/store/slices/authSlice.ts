@@ -5,7 +5,7 @@ import instance from '../../config/axios';
 import { RootState } from '../store';
 import {USER_ENDPOINTS } from '../../services/endpoints';
 import { handleLoginSuccess, handleLogout } from '../../helper/tokenHelper';
-import { LoginResponse, UserToken } from '../../types/User';
+import { LoginResponse, UserToken } from '../../types/user';
 
 
 // ----------------------------

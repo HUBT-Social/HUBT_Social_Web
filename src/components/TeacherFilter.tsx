@@ -1,22 +1,18 @@
-import { Input, Select, Row, Col, Button } from 'antd';
+import { Button, Col, Input, Row, Select } from 'antd';
 import React, { useEffect, useState } from 'react';
+import { useSelector } from 'react-redux';
 import TeacherAdd from '../components/TeacherAdd';
-import { UserInfo } from '../types/User';
-import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch } from '../store/store';
-import { selectTeachers, setFilteredTeachers } from '../store/slices/teacherSlice';
+import { selectTeachers } from '../store/slices/teacherSlice';
 
 const { Option } = Select;
 
 const TeacherFilter: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
   const teachers = useSelector(selectTeachers);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [genderFilter, setGenderFilter] = useState<number | null>(-1);
   const [statusFilter, setStatusFilter] = useState<string>('');
 
-  const [, setfilteredTeachers] = useState<UserInfo[]>(teachers);
 
   useEffect(() => {
     applyFilters();
@@ -43,9 +39,6 @@ const TeacherFilter: React.FC = () => {
     if (statusFilter !== '') {
       results = results.filter(teacher => teacher.status === statusFilter);
     }
-
-    setfilteredTeachers(results);
-    dispatch(setFilteredTeachers(results));
   };
 
   const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

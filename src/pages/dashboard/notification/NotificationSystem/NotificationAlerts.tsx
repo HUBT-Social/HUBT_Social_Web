@@ -1,4 +1,3 @@
-import { useNotificationContext } from '../contexts/NotificationContext';
 
 const NotificationAlerts = () => {
 

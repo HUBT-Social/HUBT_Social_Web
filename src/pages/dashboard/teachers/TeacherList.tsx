@@ -1,126 +1,161 @@
-import { Button, Card, Spin } from 'antd';
-import React, { useEffect } from 'react';
+import { Button, Card, Spin, message } from 'antd';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import type { AppDispatch } from '../../../store/store';
-import {store} from '../../../store/store';
-
 import {
   getTeachers,
-  selectIsLoaded,
+  selectTeachers,
   selectTeachersError,
-  selectTeachersFiltered,
   selectTeachersLoading,
-  setTeachers,
+  selectHasMore,
+  clearTeachers,
+  selectTeachersFilters,
 } from '../../../store/slices/teacherSlice';
 import TeacherEmpty from './TeacherEmpty';
-
-import { AlertCircle } from 'lucide-react';
 import TeacherTable from './TeacherTable';
 
 const TeacherList: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
-  const teacherFiltered = useSelector(selectTeachersFiltered);
+  // Selectors
   const error = useSelector(selectTeachersError);
   const loading = useSelector(selectTeachersLoading);
-  const isLoaded = useSelector(selectIsLoaded);
+  const hasMore = useSelector(selectHasMore);
+  const currentFilter = useSelector(selectTeachersFilters);
+  const teachers = useSelector(selectTeachers);
 
-  const fetchTeachersData = async () => {
-    console.log('Bắt đầu fetchTeachersData');
+  // Local state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+  const hasFetchedInitial = useRef(false);
+
+  // Load teachers for a specific page
+  const loadTeachersPage = async (page: number) => {
     try {
-      let page = 0;
-      console.log('Khởi tạo page:', page);
-      let hasMore = true;
-      console.log('Khởi tạo hasMore:', hasMore);
-      while (hasMore) {
-        console.log('Vào vòng lặp while, page hiện tại:', page);
-        const currentTeachersCount = store.getState().teachers.teachers.length;
-        console.log('Số lượng giáo viên hiện tại:', currentTeachersCount);
-       
-        const response = await dispatch(getTeachers(page)).unwrap();
-        console.log('Response từ getTeachers:', response);
-       
-        // Đợi state thay đổi
-        console.log('Bắt đầu đợi state thay đổi');
-        await new Promise((resolve) => {
-          console.log('Tạo Promise để theo dõi thay đổi state');
-          const unsubscribe = store.subscribe(() => {
-            const newCount = store.getState().teachers.teachers.length;
-            console.log('State thay đổi, số lượng mới:', newCount, 'số lượng cũ:', currentTeachersCount);
-            if (newCount > currentTeachersCount) {
-              console.log('State đã cập nhật với số lượng mới, unsubscribe');
-              unsubscribe();
-              resolve(true);
-            }
-          });
-        });
-        console.log('Hoàn thành đợi state thay đổi');
-       
-        hasMore = response?.hasMore;
-        console.log('Cập nhật hasMore:', hasMore);
-        page += 1;
-        console.log('Tăng page lên:', page);
-      }
-      console.log('Kết thúc vòng lặp while');
-    } catch (err) {
-      console.error('Lỗi khi fetch dữ liệu giáo viên:', err);
+      console.log(`📄 Loading page ${page} with size ${pageSize}...`);
+      await dispatch(
+        getTeachers({ params: { page, pageSize }, currentFilter })
+      ).unwrap();
+    } catch (err: any) {
+      console.error(`❌ Error loading page ${page}:`, err);
+      message.error(err?.message || 'Không thể tải danh sách giáo viên');
     }
-    console.log('Kết thúc fetchTeachersData');
   };
 
+  // Load data only if necessary
   useEffect(() => {
-    if (!isLoaded && teacherFiltered.length === 0) {
-      fetchTeachersData();
+    // Only load if no teachers data or initial fetch hasn't happened
+    if (!hasFetchedInitial.current && !loading && !error && teachers.length === 0) {
+      hasFetchedInitial.current = true;
+      loadTeachersPage(1);
     }
-  }, [isLoaded, teacherFiltered.length]);
+  }, [loading, error, teachers.length]);
 
-  const handleViewDetail = (id: string) => {
-    navigate(`/dashboard/teachers/${id}`);
-  };
+  // Handle load more
+  const handleLoadMore = useCallback(() => {
+    if (!hasMore || loading) return;
+    const nextPage = currentPage + 1;
+    console.log(`🔄 Loading more: page ${nextPage}`);
+    setCurrentPage(nextPage);
+    loadTeachersPage(nextPage);
+  }, [currentPage, hasMore, loading]);
 
-  if (loading && teacherFiltered.length === 0) {
-    return (
-      <Card title="Danh sách giáo viên">
-        <Spin tip="Đang tải dữ liệu..." />
-      </Card>
-    );
-  }
+  // Handle reload
+  const handleReload = useCallback(() => {
+    console.log('🔄 Reloading...');
+    dispatch(clearTeachers());
+    setCurrentPage(1);
+    hasFetchedInitial.current = false; // Reset to allow fetching again
+    loadTeachersPage(1);
+  }, [dispatch]);
 
-  if (error) {
-    return (
-      <Card title="Danh sách giáo viên">
-        <div className="flex items-center gap-2 text-red-500">
-          <AlertCircle className="w-5 h-5" />
-          <p>Lỗi khi tải danh sách giáo viên: {error}</p>
-        </div>
-      </Card>
-    );
-  }
+  // Handle export
+  const handleExport = useCallback(() => {
+    message.info('Chức năng xuất Excel đang được phát triển...');
+  }, []);
 
-  const reLoading = () => {
-      dispatch(setTeachers([]));
-      fetchTeachersData();
-  }
+  // Handle view detail
+  const handleViewDetail = useCallback(
+    (userName: string) => {
+      navigate(`/dashboard/teachers/${userName}`);
+    },
+    [navigate]
+  );
 
-  const renderExtra = () => {
-    return (
-      <div>
-        <Button onClick={reLoading}>Reload</Button>
-        <Button>Xuất Excel</Button>
-      </div>
-    );
-  };
+  // Render extra buttons
+  const renderExtra = () => (
+    <div className="flex gap-2">
+      <Button icon={<RefreshCw className="w-4 h-4" />} onClick={handleReload} disabled={loading}>
+        {loading ? 'Đang tải...' : 'Reload'}
+      </Button>
+      <Button
+        type="primary"
+        onClick={handleExport}
+        disabled={teachers.length === 0}
+      >
+        Xuất Excel
+      </Button>
+    </div>
+  );
 
   return (
-    <Card title="Danh sách giáo viên" extra={renderExtra()}>
-      {teacherFiltered.length === 0 ? (
-        <TeacherEmpty />
-      ) : (
-        <TeacherTable teachers={teacherFiltered} onClickAction={handleViewDetail}/>
-      )}
-    </Card>
+    <div className="max-w-7xl mx-auto py-6">
+      <Card
+        title={
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">Danh sách giáo viên</h2>
+            {renderExtra()}
+          </div>
+        }
+        className="shadow-sm rounded-lg"
+      >
+        <div className="min-h-[400px] relative">
+          {loading ? (
+            <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center z-10 rounded-lg">
+              <div className="text-center">
+                <Spin size="large" />
+                <p className="mt-4 text-gray-600 font-medium">Đang tải trang {currentPage}...</p>
+                <p className="text-sm text-gray-500">Vui lòng đợi...</p>
+              </div>
+            </div>
+          ) : null}
+
+          {error && !loading ? (
+            <div className="flex flex-col items-center justify-center py-16">
+              <AlertCircle className="w-16 h-16 text-red-500 mb-4" />
+              <h3 className="text-xl font-medium text-gray-900 mb-2">Có lỗi xảy ra</h3>
+              <p className="text-gray-600 mb-6 text-center max-w-md">{error}</p>
+              <Button type="primary" size="large" onClick={handleReload}>
+                Thử lại
+              </Button>
+            </div>
+          ) : teachers.length === 0 && !loading ? (
+            <TeacherEmpty />
+          ) : (
+            <>
+              <TeacherTable
+                teachers={teachers}
+                onClickAction={handleViewDetail}
+              />
+              {hasMore && (
+                <div className="mt-4 text-center">
+                  <Button
+                    type="primary"
+                    onClick={handleLoadMore}
+                    disabled={loading}
+                  >
+                    Xem thêm
+                  </Button>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </Card>
+    </div>
   );
 };
 

@@ -1,17 +1,17 @@
-import { 
-  CalendarOutlined, 
-  WarningOutlined, 
-  MessageOutlined, 
-  ClockCircleOutlined,
-  ThunderboltOutlined,
+import {
+  BellOutlined,
+  CalendarOutlined,
   CheckCircleOutlined,
+  ClockCircleOutlined,
   InfoCircleOutlined,
-  BellOutlined
+  MessageOutlined,
+  ThunderboltOutlined,
+  WarningOutlined
 } from '@ant-design/icons';
-import type { FC } from 'react';
 import type { IconComponentProps } from '@ant-design/icons/lib/components/Icon';
-import { UserInfo } from '../../../../types/User';
-import { Stats ,Notification, Template} from '../../../../types/Notification';
+import type { FC } from 'react';
+import { Stats, Template } from '../../../../types/Notification';
+import { UserInfo } from '../../../../types/user';
 
 // Define the type for Ant Design icons
 type AntDesignIcon = FC<IconComponentProps>;

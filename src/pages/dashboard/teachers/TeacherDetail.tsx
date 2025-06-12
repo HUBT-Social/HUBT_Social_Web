@@ -1,20 +1,19 @@
+import { Button, Card, Form, message, Skeleton } from 'antd';
+import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
-import { Card, Form, message } from 'antd';
-import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch } from '../../../store/store';
-import { selectTeachers, setTeacher } from '../../../store/slices/teacherSlice';
+import { useNavigate, useParams } from 'react-router-dom';
 import { updatePasswordAsync, UpdatePasswordRequest } from '../../../services/userService/updatePassword';
+import { selectTeachers, setTeacher } from '../../../store/slices/teacherSlice';
+import { AppDispatch } from '../../../store/store';
+import { UserInfo } from '../../../types/user';
+import ChatPopup from './detail/ChatPopup';
+import EditTeacherModal from './detail/EditTeacherModal';
+import EmailModal from './detail/EmailModal';
+import NotificationModal from './detail/NotificationModal';
 import TeacherAvatar from './detail/TeacherAvatar';
 import TeacherInfo from './detail/TeacherInfo';
-import EditTeacherModal from './detail/EditTeacherModal';
 import UpdatePasswordModal from './detail/UpdatePasswordModal';
-import NotificationModal from './detail/NotificationModal';
-import EmailModal from './detail/EmailModal';
-import ChatPopup from './detail/ChatPopup';
-import { UserInfo } from '../../../types/User';
-
-
 
 // API giả lập
 const createChatRoomAPIAsync = async () => {
@@ -38,28 +37,31 @@ const TeacherDetail: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
-  
+
   // Forms
   const [editForm] = Form.useForm();
   const [passwordForm] = Form.useForm();
-  
+
   // Redux
   const teachers = useSelector(selectTeachers);
-  const teacher = teachers.find((t) => t.userName === id);
-  
+  const teacher = teachers.find((t: { userName: string | undefined }) => t.userName === id);
+
   // Modal states
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [isPasswordModalVisible, setIsPasswordModalVisible] = useState(false);
   const [isNotificationModalVisible, setIsNotificationModalVisible] = useState(false);
   const [isEmailModalVisible, setIsEmailModalVisible] = useState(false);
-  
+
   // Chat states
   const [chatVisible, setChatVisible] = useState(false);
   const [chatConnecting, setChatConnecting] = useState(false);
   const [chatReady, setChatReady] = useState(false);
-  
+
   // Upload state
   const [, setImageData] = useState<{ base64String: string; fileName: string } | null>(null);
+
+  // Loading state
+  const [isLoading,] = useState(!teacher);
 
   // Handlers for TeacherAvatar
   const handleSendNotification = () => {
@@ -73,7 +75,6 @@ const TeacherDetail: React.FC = () => {
   const handleOpenChat = async () => {
     setChatVisible(true);
     setChatConnecting(true);
-
     try {
       const chatRoom_response = await createChatRoomAPIAsync();
       const chatRoom_id = (chatRoom_response as any).data.roomId;
@@ -81,6 +82,7 @@ const TeacherDetail: React.FC = () => {
       setChatReady(true);
     } catch (err) {
       console.error('❌ Lỗi khi mở chat:', err);
+      message.error('Không thể mở chat!');
     } finally {
       setChatConnecting(false);
     }
@@ -97,7 +99,7 @@ const TeacherDetail: React.FC = () => {
 
   const handleDelete = () => {
     console.log('Delete teacher:', id);
-    // TODO: Implement delete functionality
+    message.warning('Chức năng xóa đang được phát triển!');
   };
 
   const handleBack = () => {
@@ -107,17 +109,14 @@ const TeacherDetail: React.FC = () => {
   // Form submissions
   const handleEditSubmit = async (values: any) => {
     if (!teacher) return;
-
     const updatedTeacher: UserInfo = {
       ...teacher,
       ...values,
       gender: values.gender === 'Male' ? 1 : values.gender === 'Female' ? 0 : 2,
       dateOfBirth: values.dateOfBirth?.toISOString(),
     };
-
     try {
       const res = await dispatch(setTeacher(updatedTeacher));
-
       if (setTeacher.fulfilled.match(res)) {
         setIsEditModalVisible(false);
         message.success('Cập nhật giáo viên thành công!');
@@ -131,37 +130,33 @@ const TeacherDetail: React.FC = () => {
 
   const handlePasswordSubmit = async (values: any) => {
     if (!teacher) return;
-
     const request: UpdatePasswordRequest = {
       userName: teacher.userName,
       newPassword: values.newPassword,
-      confirmNewPassword: values.confirmPassword
+      confirmNewPassword: values.confirmPassword,
     };
-
     try {
       const status = await updatePasswordAsync(request);
       if (status) {
-        message.success("Cập nhật mật khẩu thành công!");
+        message.success('Cập nhật mật khẩu thành công!');
         setIsPasswordModalVisible(false);
         passwordForm.resetFields();
       } else {
         throw new Error();
       }
     } catch (error) {
-      message.error("Cập nhật mật khẩu thất bại!");
+      message.error('Cập nhật mật khẩu thất bại!');
     }
   };
 
   const handleNotificationSubmit = (values: any) => {
     console.log('Sending notification:', values);
-    // TODO: Implement notification sending
     setIsNotificationModalVisible(false);
     message.success('Đã gửi thông báo!');
   };
 
   const handleEmailSubmit = (values: any) => {
     console.log('Sending email:', values);
-    // TODO: Implement email sending
     setIsEmailModalVisible(false);
     message.success('Đã gửi email!');
   };
@@ -179,7 +174,7 @@ const TeacherDetail: React.FC = () => {
       message.error('Không thể đọc file ảnh!');
     };
     reader.readAsDataURL(file);
-    return false; // Prevent auto upload
+    return false;
   };
 
   const handleImageRemove = () => {
@@ -194,7 +189,6 @@ const TeacherDetail: React.FC = () => {
 
   const handleSendMessage = (message: string) => {
     console.log('📩 Gửi tin nhắn:', message);
-    // TODO: Implement message sending via SignalR
   };
 
   // Modal cancel handlers
@@ -216,91 +210,159 @@ const TeacherDetail: React.FC = () => {
     setIsEmailModalVisible(false);
   };
 
-  // Loading state when teacher not found
-  if (!teacher) {
+  // Animation variants
+  const cardVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+  };
+
+  const buttonVariants = {
+    hover: { scale: 1.05, transition: { duration: 0.2 } },
+    tap: { scale: 0.95 },
+  };
+
+  // Handle loading or not found
+  if (isLoading) {
     return (
-      <div className="p-6 bg-gray-100 min-h-screen flex items-center justify-center">
-        <Card className="shadow-lg rounded-lg p-8 text-center">
-          <p className="text-lg text-gray-700 mb-4">
-            Không tìm thấy giáo viên với ID: {id}
-          </p>
-          <button 
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            onClick={handleBack}
-          >
-            Quay lại danh sách giáo viên
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 p-4 sm:p-6 flex items-center justify-center">
+        <Card className="w-full max-w-2xl shadow-xl rounded-2xl p-8">
+          <Skeleton avatar paragraph={{ rows: 4 }} active />
         </Card>
       </div>
     );
   }
 
+  if (!teacher) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 p-4 sm:p-6 flex items-center justify-center">
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={cardVariants}
+          className="w-full max-w-md"
+        >
+          <Card className="shadow-xl rounded-2xl p-8 text-center bg-white">
+            <p className="text-lg font-medium text-gray-700 mb-6">
+              Không tìm thấy giáo viên với ID: {id}
+            </p>
+            <motion.div variants={buttonVariants} whileHover="hover" whileTap="tap">
+              <Button
+                type="primary"
+                size="large"
+                className="bg-gradient-to-r from-blue-500 to-blue-600 border-none"
+                onClick={handleBack}
+              >
+                Quay lại danh sách giáo viên
+              </Button>
+            </motion.div>
+          </Card>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="p-4 sm:p-6 bg-gray-100 min-h-screen">
-      <Card className="w-full mt-4 sm:mt-6 shadow-lg rounded-lg">
-        <div className="flex flex-col md:flex-row md:space-x-8 p-4 sm:p-6">
-          {/* Avatar Section */}
-          <TeacherAvatar
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-200 p-4 sm:p-6">
+      <motion.div
+        initial="hidden"
+        animate="visible"
+        variants={cardVariants}
+        className="w-full max-w-7xl mx-auto"
+      >
+        <Card className="shadow-xl rounded-2xl overflow-hidden bg-white">
+          <div className="flex flex-col lg:flex-row lg:space-x-8 p-6 sm:p-8">
+            {/* Avatar Section */}
+            <motion.div
+              className="w-full lg:w-1/3 mb-6 lg:mb-0"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <TeacherAvatar
+                teacher={teacher}
+                onSendNotification={handleSendNotification}
+                onSendEmail={handleSendEmail}
+                onOpenChat={handleOpenChat}
+              />
+            </motion.div>
+
+            {/* Info Section */}
+            <motion.div
+              className="w-full lg:w-2/3"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <TeacherInfo
+                teacher={teacher}
+                onEdit={handleEdit}
+                onUpdatePassword={handleUpdatePassword}
+                onDelete={handleDelete}
+                onBack={handleBack}
+              />
+            </motion.div>
+          </div>
+        </Card>
+      </motion.div>
+
+      {/* Modals */}
+      <AnimatePresence>
+        {isEditModalVisible && (
+          <EditTeacherModal
+            visible={isEditModalVisible}
             teacher={teacher}
-            onSendNotification={handleSendNotification}
-            onSendEmail={handleSendEmail}
-            onOpenChat={handleOpenChat}
+            form={editForm}
+            onSubmit={handleEditSubmit}
+            onCancel={handleEditCancel}
           />
-
-          {/* Info Section */}
-          <TeacherInfo
-            teacher={teacher}
-            onEdit={handleEdit}
-            onUpdatePassword={handleUpdatePassword}
-            onDelete={handleDelete}
-            onBack={handleBack}
+        )}
+        {isPasswordModalVisible && (
+          <UpdatePasswordModal
+            visible={isPasswordModalVisible}
+            userName={teacher.userName}
+            form={passwordForm}
+            onSubmit={handlePasswordSubmit}
+            onCancel={handlePasswordCancel}
           />
-        </div>
-      </Card>
-
-      {/* Edit Modal */}
-      <EditTeacherModal
-        visible={isEditModalVisible}
-        teacher={teacher}
-        form={editForm}
-        onSubmit={handleEditSubmit}
-        onCancel={handleEditCancel}
-      />
-
-      {/* Password Modal */}
-      <UpdatePasswordModal
-        visible={isPasswordModalVisible}
-        userName={teacher.userName}
-        form={passwordForm}
-        onSubmit={handlePasswordSubmit}
-        onCancel={handlePasswordCancel}
-      />
-
-      {/* Notification Modal */}
-      <NotificationModal
-        visible={isNotificationModalVisible}
-        onSubmit={handleNotificationSubmit}
-        onCancel={handleNotificationCancel}
-        onImageUpload={handleImageUpload}
-        onImageRemove={handleImageRemove}
-      />
-
-      {/* Email Modal */}
-      <EmailModal
-        visible={isEmailModalVisible}
-        recipientEmail={teacher.email}
-        onSubmit={handleEmailSubmit}
-        onCancel={handleEmailCancel}
-      />
+        )}
+        {isNotificationModalVisible && (
+          <NotificationModal
+            visible={isNotificationModalVisible}
+            onSubmit={handleNotificationSubmit}
+            onCancel={handleNotificationCancel}
+            onImageUpload={handleImageUpload}
+            onImageRemove={handleImageRemove}
+          />
+        )}
+        {isEmailModalVisible && (
+          <EmailModal
+            visible={isEmailModalVisible}
+            recipientEmail={teacher.email}
+            onSubmit={handleEmailSubmit}
+            onCancel={handleEmailCancel}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Chat Popup */}
-      <ChatPopup
-        visible={chatVisible}
-        isConnecting={chatConnecting}
-        isReadyToChat={chatReady}
-        onClose={handleChatClose}
-        onSendMessage={handleSendMessage}
-      />
+      <AnimatePresence>
+        {chatVisible && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            transition={{ duration: 0.3 }}
+          >
+            <ChatPopup
+              visible={chatVisible}
+              isConnecting={chatConnecting}
+              isReadyToChat={chatReady}
+              onClose={handleChatClose}
+              onSendMessage={handleSendMessage}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

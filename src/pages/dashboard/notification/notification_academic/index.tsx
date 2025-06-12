@@ -1,54 +1,151 @@
-
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import { HistoryOutlined, SaveOutlined, SendOutlined } from '@ant-design/icons';
 import {
+  Alert,
+  Badge,
   Button,
+  Card,
+  Collapse,
+  Divider,
+  Input,
+  Progress,
+  Space,
+  Switch,
   Table,
   Tag,
   Typography,
   message,
-  Input,
-  Switch,
-  Card,
-  Space,
-  Divider,
-  Alert,
-  Badge,
 } from 'antd';
-import { SendOutlined, SaveOutlined, HistoryOutlined } from '@ant-design/icons';
+import { ColumnType } from 'antd/es/table';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 
-// Import components
-import StatisticsCards from './StatisticsCards';
-import NotificationDrawer from './NotificationDrawer';
-
-// Import data and constants
-import { columns } from './TableColumns';
-import { SavedGroup, NotificationType, NotificationPriority, ChannelType,  SendNotificationByAcademic } from '../../../../types/Notification';
-import { selectMergeStudentsWithScores } from '../../../../store/slices/studentSlice';
-import { createFullName } from '../../../../types/Student';
-import {notificationTypeOptions as notificationTypes} from '../data/mockData';
-import {Notification} from '../../../../types/Notification';
-import { AppDispatch } from '../../../../store/store';
 import { sendAcademicNotification } from '../../../../store/slices/notificationSlice';
-import { NotificationProvider } from '../contexts/NotificationContext';
+import { getAverageScore, selectAverageScore } from '../../../../store/slices/studentSlice';
+import { AppDispatch, store } from '../../../../store/store';
+import { ChannelType, Notification, NotificationPriority, NotificationType, SavedGroup, SendNotificationByAcademic } from '../../../../types/Notification';
+import { AcademicStatus } from '../../../../types/Student';
+import { notificationTypeOptions as notificationTypes } from '../data/mockData';
+import NotificationDrawer from './NotificationDrawer';
+import StatisticsCards from './StatisticsCards';
 
 const { Title, Text } = Typography;
+const { Panel } = Collapse;
 
+// Define calculateStatusAcademic
+const calculateStatusAcademic = (gpa10: number): AcademicStatus => {
+  if (gpa10 >= 9.0) return 'Excellent';
+  if (gpa10 >= 8.0) return 'VeryGood';
+  if (gpa10 >= 7.0) return 'Good';
+  if (gpa10 >= 6.5) return 'FairlyGood';
+  if (gpa10 >= 5.0) return 'Average';
+  if (gpa10 >= 4.0) return 'Weak';
+  return 'Warning';
+};
+
+// Define columns for the Table
+const columns: ColumnType<AverageScore>[] = [
+  {
+    title: 'Student Information',
+    dataIndex: 'maSV',
+    key: 'maSV',
+    width: 280,
+    fixed: 'left',
+    render: (_: string, record: AverageScore) => record.maSV,
+  },
+  {
+    title: 'GPA',
+    dataIndex: 'diemTB10',
+    key: 'diemTB10',
+    width: 120,
+    sorter: (a: AverageScore, b: AverageScore) => a.diemTB10 - b.diemTB10,
+    render: (diemTB10: number) => (
+      <div style={{ minWidth: 80 }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+          <Text strong style={{ color: getGPAColor(diemTB10), marginRight: 8 }}>
+            {diemTB10}
+          </Text>
+          <Badge
+            count={diemTB10 >= 8 ? '⭐' : diemTB10 >= 7 ? '👍' : diemTB10 >= 5 ? '⚠️' : '❌'}
+            style={{ backgroundColor: 'transparent' }}
+          />
+        </div>
+        <Progress
+          percent={Math.min(diemTB10 * 10, 100)}
+          size="small"
+          showInfo={false}
+          strokeColor={getGPAColor(diemTB10)}
+          style={{ margin: 0 }}
+        />
+      </div>
+    ),
+  },
+  {
+    title: 'Academic Status',
+    dataIndex: 'academicStatus',
+    key: 'academicStatus',
+    width: 160,
+    filters: [
+      { text: 'Excellent', value: 'Excellent' },
+      { text: 'Very Good', value: 'VeryGood' },
+      { text: 'Good', value: 'Good' },
+      { text: 'Fairly Good', value: 'FairlyGood' },
+      { text: 'Average', value: 'Average' },
+      { text: 'Weak', value: 'Weak' },
+      { text: 'Warning', value: 'Warning' },
+    ],
+    onFilter: (value, record: AverageScore) =>
+      typeof value === 'string' && record.academicStatus === value,
+    render: (status: string) => (
+      <Tag color={status ? getStatusColor(status as AcademicStatus) : 'default'} style={{ margin: 0 }}>
+        {status || 'Unspecified'}
+      </Tag>
+    ),
+  },
+];
+
+// Mock getGPAColor and getStatusColor
+const getGPAColor = (gpa: number): string => {
+  if (gpa >= 8) return '#52c41a';
+  if (gpa >= 7) return '#1890ff';
+  if (gpa >= 5) return '#faad14';
+  return '#ff4d4f';
+};
+
+const getStatusColor = (status: AcademicStatus): string => {
+  switch (status) {
+    case 'Excellent': return 'green';
+    case 'VeryGood': return 'cyan';
+    case 'Good': return 'blue';
+    case 'FairlyGood': return 'geekblue';
+    case 'Average': return 'gold';
+    case 'Weak': return 'orange';
+    case 'Warning': return 'red';
+    default: return 'default';
+  }
+};
+
+interface AverageScore {
+  maSV: string;
+  diemTB10: number;
+  diemTB4: number;
+  academicStatus: string;
+}
 
 /**
  * Main component for the smart notification system.
  */
-const EnhancedNotificationSystem: React.FC = ({ }) => {
+const EnhancedNotificationSystem: React.FC = () => {
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [isSelectAll, setSelectAll] = useState(false);
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
   const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([]);
   const [groupName, setGroupName] = useState('');
   const [groupDescription, setGroupDescription] = useState('');
-  const [history, setHistory] = useState<Notification[]>([]);
+  const [history] = useState<Notification[]>([]);
   const [searchText, setSearchText] = useState('');
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   // Form values
   const [notificationType, setNotificationType] = useState<NotificationType | ''>('');
@@ -56,91 +153,130 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
   const [channels, setChannels] = useState<ChannelType[]>([]);
   const [customMessage, setCustomMessage] = useState('');
   const [scheduleDate, setScheduleDate] = useState<string | null>(null);
-
-  const recipients = useSelector(selectMergeStudentsWithScores);
+  const recipients = useSelector(selectAverageScore);
   const dispatch = useDispatch<AppDispatch>();
-  // Update current time every minute
+
+  const fetchAverageScore = async () => {
+    const currentMargeStudent = store.getState().students.averageScore.length;
+    console.log("Current student marge: ", currentMargeStudent);
+    try {
+      await dispatch(getAverageScore());
+      await new Promise((resolve) => {
+        const unsubscribe = store.subscribe(() => {
+          const newCount = store.getState().students.averageScore.length;
+          if (newCount > currentMargeStudent) {
+            unsubscribe();
+            resolve(true);
+          }
+          console.log("Current std: ", newCount);
+        });
+      });
+    } catch {
+      console.log("Loi lay diem nguoi dung");
+    }
+  };
+
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-    return () => clearInterval(timer);
+    console.log('Check get scores');
+    if (recipients.length === 0) {
+      fetchAverageScore();
+    }
   }, []);
+
+  // Preprocess recipients to include academicStatus
+  const processedRecipients = useMemo(() => {
+    return recipients.map(recipient => ({
+      ...recipient,
+      academicStatus: calculateStatusAcademic(recipient.diemTB10),
+    }));
+  }, [recipients]);
+
 
   // Enhanced filtering
   const filteredRecipients = useMemo(() => {
-    if (!searchText) return recipients;
-    return recipients.filter(recipient =>
-      createFullName(recipient).toLowerCase().includes(searchText.toLowerCase()) ||
-      recipient.faculty.toLowerCase().includes(searchText.toLowerCase()) ||
-      (recipient.className || '').toLowerCase().includes(searchText.toLowerCase())
+    if (!searchText) return processedRecipients;
+    return processedRecipients.filter(r =>
+      r.maSV.toLowerCase().includes(searchText.toLowerCase())
     );
-  }, [recipients, searchText]);
+  }, [processedRecipients, searchText]);
 
   // Smart suggestion based on context
-  const suggestedType = useMemo(() => {
-    const month = currentTime.getMonth();
-    const date = currentTime.getDate();
-    const selectedGPAs = selectedRowKeys.map(key =>
-      recipients.find(r => r.userName === key)?.diemTB10 || 0
-    );
-    const avgGPA = selectedGPAs.length > 0
-      ? selectedGPAs.reduce((a, b) => a + b, 0) / selectedGPAs.length
-      : 0;
+  // Smart suggestion based on context
+const suggestedType = useMemo(() => {
+  const selectedGPAs = selectedRowKeys.map(key =>
+    processedRecipients.find(r => r.maSV === key)?.diemTB10 || 0
+  );
+  const avgGPA = selectedGPAs.length > 0
+    ? selectedGPAs.reduce((a, b) => a + b, 0) / selectedGPAs.length
+    : 0;
 
-    if (avgGPA < 5.0) return 'warning';
-    if (month === 8 || month === 1) return 'tuition';
-    if (date > 20) return 'attendance';
+  // Lấy danh sách trạng thái học tập của các sinh viên được chọn
+  const selectedStatuses = selectedRowKeys.map(key =>
+    processedRecipients.find(r => r.maSV === key)?.academicStatus || ''
+  );
+
+  // Đếm số sinh viên ở mỗi trạng thái học tập
+  const warningCount = selectedStatuses.filter(status => status === 'Warning').length;
+  const excellentCount = selectedStatuses.filter(status => status === 'Excellent').length;
+  const totalSelected = selectedRowKeys.length;
+  const totalRecipients = processedRecipients.length;
+
+  // Điều kiện 1: Nếu điểm trung bình dưới 5.0, gợi ý thông báo cảnh báo
+  if (avgGPA < 5.0) {
+    return 'warning';
+  }
+
+  // Điều kiện 2: Nếu hơn 50% sinh viên được chọn có trạng thái 'Warning', gợi ý thông báo cảnh báo
+  if (totalSelected > 0 && warningCount / totalSelected > 0.5) {
+    return 'warning';
+  }
+
+  // Điều kiện 3: Nếu hơn 50% sinh viên được chọn có trạng thái 'Excellent', gợi ý thông báo khen thưởng
+  if (totalSelected > 0 && excellentCount / totalSelected > 0.5) {
+    return 'achievement';
+  }
+
+  // Điều kiện 4: Nếu chọn toàn bộ sinh viên, gợi ý thông báo sự kiện chung
+  if (totalSelected === totalRecipients && totalSelected > 0) {
     return 'event';
-  }, [currentTime, selectedRowKeys, recipients]);
+  }
 
-  // Prepare table columns with dynamic filters
-  const tableColumns = useMemo(() => {
-    const updatedColumns = [...columns];
+  // Điều kiện 5: Nếu chọn ít hơn 10% tổng số sinh viên, gợi ý thông báo cá nhân
+  if (totalSelected > 0 && totalSelected / totalRecipients < 0.1) {
+    return 'personal';
+  }
 
-    const facultyColumn = updatedColumns.find(col => col.key === 'faculty');
-    if (facultyColumn) {
-      facultyColumn.filters = [...new Set(recipients.map(r => r.faculty))].map(f => ({
-        text: f,
-        value: f,
-      }));
-    }
+  // Điều kiện 6: Nếu điểm trung bình từ 7.0 trở lên, gợi ý thông báo khuyến khích
+  if (avgGPA >= 7.0) {
+    return 'encouragement';
+  }
 
-    const statusColumn = updatedColumns.find(col => col.key === 'academicStatus');
-    if (statusColumn) {
-      statusColumn.filters = [...new Set(recipients.map(r => r.academicStatus))].map(s => ({
-        text: s,
-        value: s,
-      }));
-    }
-
-    return updatedColumns;
-  }, [recipients]);
+  // Mặc định: Gợi ý thông báo sự kiện
+  return 'event';
+}, [selectedRowKeys, processedRecipients]);
 
   // Statistics
   const stats = useMemo(() => {
-    const total = recipients.length;
+    const total = processedRecipients.length;
     const selected = selectedRowKeys.length;
-    const warningStudents = recipients.filter(r => r.status === 'Warning').length;
-    const avgGPA = recipients.length > 0
-      ? recipients.reduce((sum, r) => sum + r.diemTB10, 0) / recipients.length
+    const warningStudents = processedRecipients.filter(r => r.academicStatus === 'Warning').length;
+    const avgGPA = processedRecipients.length > 0
+      ? processedRecipients.reduce((sum, r) => sum + r.diemTB10, 0) / processedRecipients.length
       : 0;
 
     return { total, selected, warningStudents, avgGPA };
-  }, [recipients, selectedRowKeys]);
+  }, [processedRecipients, selectedRowKeys]);
 
-  // Handle form submission with enhanced validation
+  // Handle form submission
   const onFinish = useCallback(async () => {
     if (selectedRowKeys.length === 0) {
       message.error('Please select at least one recipient!');
       return;
     }
-
     if (!notificationType) {
       message.error('Please select a notification type!');
       return;
     }
-
     if (channels.length === 0) {
       message.error('Please select at least one delivery channel!');
       return;
@@ -151,17 +287,16 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
       const payload: SendNotificationByAcademic = {
         type: notificationType,
         body: customMessage,
-        channels: channels,
-        priority: priority,
-        recipients: selectedRowKeys as string[], // List of selected userName values
-        sendAll: selectedRowKeys.length === recipients.length, // True if all recipients are selected
-        timestamp: new Date().toISOString(), // Current timestamp in ISO format
+        channels,
+        priority,
+        recipients: isSelectAll ? [] : selectedRowKeys as string[],
+        sendAll: isSelectAll,
+        timestamp: new Date().toISOString(),
       };
+      console.log('Payload: ', payload);
 
-      // Simulate API call
-      const notification: any = await dispatch(sendAcademicNotification({payload}));
-      console.log('Notification Response: ',notification);
-      setHistory(prev => [notification, ...prev]);
+      const response = await dispatch(sendAcademicNotification({ payload }));
+      console.log('Response: ', response);
       message.success({
         content: `Notification sent successfully to ${selectedRowKeys.length} recipients!`,
         duration: 3,
@@ -174,15 +309,16 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
       setCustomMessage('');
       setScheduleDate(null);
       setSelectedRowKeys([]);
+      setSelectedTags([]);
       setDrawerVisible(false);
     } catch (error) {
       message.error('An error occurred while sending the notification!');
     } finally {
       setIsLoading(false);
     }
-  }, [selectedRowKeys, notificationType, priority, channels, scheduleDate]);
+  }, [selectedRowKeys, notificationType, priority, channels, scheduleDate, processedRecipients, dispatch]);
 
-  // Enhanced group saving
+  // Save group
   const saveGroup = useCallback(() => {
     if (!groupName.trim() || selectedRowKeys.length === 0) {
       message.error('Please enter a group name and select at least one recipient!');
@@ -202,20 +338,98 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
     setGroupDescription('');
   }, [groupName, groupDescription, selectedRowKeys]);
 
+  // Delete group
+  const deleteGroup = useCallback((groupName: string) => {
+    setSavedGroups(prev => prev.filter(group => group.name !== groupName));
+    message.success(`Group "${groupName}" deleted successfully!`);
+  }, []);
+
   // Quick select functions
-  const selectAll = useCallback(() => setSelectedRowKeys(recipients.map(r => r.userName)), [recipients]);
-  const selectNone = useCallback(() => setSelectedRowKeys([]), []);
+  const selectAll = useCallback(() => {
+    setSelectedRowKeys(processedRecipients.map(r => r.maSV));
+    setSelectAll(true);
+    setSelectedTags(['Select All']);
+  }, [processedRecipients]);
+
+  const selectNone = useCallback(() => {
+    setSelectedRowKeys([]);
+    setSelectAll(false);
+    setSelectedTags([]);
+  }, []);
+
   const selectWarningStudents = useCallback(() => {
-    const warningKeys = recipients.filter(r => r.academicStatus === 'Warning').map(r => r.userName);
+    const warningKeys = processedRecipients.filter(r => r.academicStatus === 'Warning').map(r => r.maSV);
     setSelectedRowKeys(warningKeys);
-  }, [recipients]);
+    setSelectAll(false);
+    setSelectedTags(['Select Warning Students']);
+  }, [processedRecipients]);
+
+  const selectExcellentStudents = useCallback(() => {
+    const excellentKeys = processedRecipients.filter(r => r.academicStatus === 'Excellent').map(r => r.maSV);
+    setSelectedRowKeys(excellentKeys);
+    setSelectAll(false);
+    setSelectedTags(['Select Excellent Students']);
+  }, [processedRecipients]);
+
+  const selectVeryGoodStudents = useCallback(() => {
+    const excellentKeys = processedRecipients.filter(r => r.academicStatus === 'VeryGood').map(r => r.maSV);
+    setSelectedRowKeys(excellentKeys);
+    setSelectAll(false);
+    setSelectedTags(['Select Very Good Students']);
+  }, [processedRecipients]);
+
+  const selectGoodStudents = useCallback(() => {
+    const excellentKeys = processedRecipients.filter(r => 
+      r.academicStatus === 'VeryGood' || 
+      r.academicStatus === 'FairlyGood' ||
+      r.academicStatus === 'Excellent' ||
+      r.academicStatus === 'Good'
+    ).map(r => r.maSV);
+    setSelectedRowKeys(excellentKeys);
+    setSelectAll(false);
+    setSelectedTags(['Select Very Good Students']);
+  }, [processedRecipients]);
+
+  // Handle tag selection
+  const handleTagChange = useCallback((tag: string, checked: boolean) => {
+    setSelectedTags(prev => {
+      if (checked) {
+        if (tag === 'Select All') {
+          selectAll();
+          return ['Select All'];
+        }
+        if (tag === 'Clear Selection') {
+          selectNone();
+          return ['Clear Selection'];
+        }
+        if (tag === 'Select Warning Students') {
+          selectWarningStudents();
+          return ['Select Warning Students'];
+        }
+        if (tag === 'Select Excellent Students') {
+          selectExcellentStudents();
+          return ['Select Excellent Students'];
+        }
+        if (tag === 'Select Very Good Students') {
+          selectVeryGoodStudents();
+          return ['Select Very Good Students'];
+        }
+        if (tag === 'Good Students') {
+          selectGoodStudents();
+          return ['Good Students'];
+        }
+      } else {
+        selectNone();
+        return [];
+      }
+      return prev;
+    });
+  }, [selectAll, selectNone, selectWarningStudents, selectExcellentStudents]);
+
+  const tags = ['Select All', 'Clear Selection', 'Select Warning Students', 'Select Excellent Students','Select Very Good Students','Good Students'];
 
   return (
-        <div
-      className={`min-h-screen transition-colors duration-300 ${
-        darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'
-      }`}
-    >
+    <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'}`}>
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -252,7 +466,7 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
           <Alert
             message="Smart Suggestion"
             description={`Based on the selected recipients, we recommend sending a ${
-              notificationTypes.find(t => t.value === suggestedType)?.label
+              notificationTypes.find(t => t.value === suggestedType)?.label || 'general'
             } notification`}
             type="info"
             showIcon
@@ -290,9 +504,9 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
                     <Tag
                       key={type.value}
                       color={type.value === suggestedType ? type.color : 'default'}
-                      className="mb-2"
+                      className="mb-5"
                     >
-                      <type.icon /> {type.label}
+                      {type.label}
                     </Tag>
                   ))}
                 </div>
@@ -303,11 +517,21 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
               <div>
                 <Text strong className="block mb-2">Quick Actions:</Text>
                 <Space wrap>
-                  <Button size="small" onClick={selectAll}>Select All</Button>
-                  <Button size="small" onClick={selectNone}>Clear Selection</Button>
-                  <Button size="small" onClick={selectWarningStudents} type="dashed">
-                    Select Warning Students
-                  </Button>
+                  {tags.map((tag) => (
+                    <Tag.CheckableTag
+                      key={tag}
+                      checked={selectedTags.includes(tag)}
+                      onChange={(checked) => handleTagChange(tag, checked)}
+                      style={{
+                        border: '1px dashed #d9d9d9',
+                        padding: '0 8px',
+                        cursor: 'pointer',
+                        backgroundColor: selectedTags.includes(tag) ? '#e6f7ff' : 'transparent',
+                      }}
+                    >
+                      {tag}
+                    </Tag.CheckableTag>
+                  ))}
                 </Space>
               </div>
             </Space>
@@ -319,7 +543,6 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
             className={`${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg xl:col-span-2`}
           >
             <Space direction="vertical" size="middle" className="w-full">
-              {/* Search and Group Management */}
               <div className="flex flex-wrap gap-4">
                 <Input
                   placeholder="🔍 Search students..."
@@ -343,7 +566,6 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
                 </Button>
               </div>
 
-              {/* Saved Groups */}
               {savedGroups.length > 0 && (
                 <div>
                   <Text strong>Saved Groups:</Text>
@@ -352,6 +574,8 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
                       <Tag
                         key={group.name}
                         color="blue"
+                        closable
+                        onClose={() => deleteGroup(group.name)}
                         className="mb-2 cursor-pointer"
                         onClick={() => setSelectedRowKeys(group.keys)}
                       >
@@ -362,9 +586,8 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
                 </div>
               )}
 
-              {/* Recipients Table */}
               <Table
-                rowKey={'userName'}
+                rowKey="maSV"
                 rowSelection={{
                   selectedRowKeys,
                   onChange: setSelectedRowKeys,
@@ -374,7 +597,7 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
                     Table.SELECTION_NONE,
                   ],
                 }}
-                columns={tableColumns}
+                columns={columns}
                 dataSource={filteredRecipients}
                 pagination={{
                   pageSize: 8,
@@ -390,26 +613,47 @@ const EnhancedNotificationSystem: React.FC = ({ }) => {
         </div>
 
         {/* History Panel */}
+        <Card
+          title="📜 Notification History"
+          className={`mt-6 ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white'} shadow-lg`}
+        >
+          {history.length === 0 ? (
+            <Text type="secondary">No notifications sent yet.</Text>
+          ) : (
+            <Collapse>
+              {history.map((notification, index) => (
+                <Panel
+                  header={`Notification #${history.length - index} - ${notification.type} (${new Date(notification.time).toLocaleString()})`}
+                  key={index}
+                >
+                  <p><strong>Message:</strong> {notification.body}</p>
+                  <p><strong>Priority:</strong> {notification.priority}</p>
+                  <p><strong>Recipients:</strong> {notification.recipients} students</p>
+                </Panel>
+              ))}
+            </Collapse>
+          )}
+        </Card>
 
-        {/* Enhanced Notification Drawer */}
+        {/* Notification Drawer */}
         <NotificationDrawer
-        visible={drawerVisible}
-        onClose={() => setDrawerVisible(false)}
-        selectedRowKeys={selectedRowKeys}
-        notificationType={notificationType}
-        setNotificationType={setNotificationType}
-        priority={priority}
-        setPriority={setPriority}
-        channels={channels}
-        setChannels={setChannels}
-        customMessage={customMessage}
-        setCustomMessage={setCustomMessage}
-        scheduleDate={scheduleDate}
-        setScheduleDate={setScheduleDate}
-        onFinish={onFinish}
-        isLoading={isLoading}
-        darkMode={darkMode}
-      />
+          visible={drawerVisible}
+          onClose={() => setDrawerVisible(false)}
+          selectedRowKeys={selectedRowKeys}
+          notificationType={notificationType}
+          setNotificationType={setNotificationType}
+          priority={priority}
+          setPriority={setPriority}
+          channels={channels}
+          setChannels={setChannels}
+          customMessage={customMessage}
+          setCustomMessage={setCustomMessage}
+          scheduleDate={scheduleDate}
+          setScheduleDate={setScheduleDate}
+          onFinish={onFinish}
+          isLoading={isLoading}
+          darkMode={darkMode}
+        />
       </div>
     </div>
   );
