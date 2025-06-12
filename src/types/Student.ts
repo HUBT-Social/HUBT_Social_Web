@@ -1,4 +1,6 @@
-import { UserInfo } from "./user";
+import { UserInfo } from "./userInfo";
+
+
 
 
 export interface AverageScore {

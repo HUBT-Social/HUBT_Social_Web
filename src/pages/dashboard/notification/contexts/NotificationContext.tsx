@@ -1,7 +1,7 @@
 import type { Dayjs } from 'dayjs'; // Thêm import Dayjs
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { UserInfo } from '../../../../types/user';
 import {Notification} from '../../../../types/Notification';
+import { UserInfo } from '../../../../types/userInfo';
 
 
 

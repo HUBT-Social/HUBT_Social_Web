@@ -8,10 +8,9 @@ import {
 import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/es/storage';
 import instance from '../../config/axios';
-import { getTokensFromLocalStorage } from '../../helper/tokenHelper';
-import { UserInfo } from '../../types/user';
 import { RootState } from '../store';
 import { AverageScore } from '../../types/Student';
+import { UserInfo } from '../../types/userInfo';
 
 // Simplified filter interface
 export interface Filter {
@@ -165,9 +164,6 @@ export const addStudent = createAsyncThunk<
   { rejectValue: string }
 >('students/add', async (newStudent, { rejectWithValue }) => {
   try {
-    const token = getTokensFromLocalStorage();
-    if (!token) return rejectWithValue('Không tìm thấy token xác thực');
-
     const res = await instance.USER_SERVICE.post('/api/user/add-user', newStudent);
     return res.data.user;
   } catch (error: any) {
@@ -184,9 +180,6 @@ export const setStudent = createAsyncThunk<
   { rejectValue: string }
 >('students/set', async (updatedStudent, { rejectWithValue }) => {
   try {
-    const token = getTokensFromLocalStorage();
-    if (!token) return rejectWithValue('Không tìm thấy token xác thực');
-
     const res = await instance.USER_SERVICE.put(
       '/api/user/update-user-admin',
       updatedStudent
@@ -206,9 +199,6 @@ export const deleteStudent = createAsyncThunk<
   { rejectValue: string }
 >('students/delete', async (username, { rejectWithValue }) => {
   try {
-    const token = getTokensFromLocalStorage();
-    if (!token) return rejectWithValue('Không tìm thấy token xác thực');
-
     await instance.USER_SERVICE.delete(`/api/user/delete-user/${username}`);
     return username;
   } catch (error: any) {
@@ -335,8 +325,8 @@ const studentSlice = createSlice({
       // DELETE STUDENT
       .addCase(deleteStudent.fulfilled, (state, action) => {
         const username = action.payload;
-        state.students = state.students.filter((s) => s.userName !== username);
-        state.studentsFiltered = state.studentsFiltered.filter((s) => s.userName !== username);
+        state.students = state.students.filter((s: { userName: string; }) => s.userName !== username);
+        state.studentsFiltered = state.studentsFiltered.filter((s: { userName: string; }) => s.userName !== username);
         state.loading = false;
       })
       

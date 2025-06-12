@@ -1,7 +1,7 @@
 import React from 'react';
 import { Modal, Form, Input, Select, DatePicker, Button } from 'antd';
 import dayjs from 'dayjs';
-import { UserInfo } from '../../../../types/user';
+import { UserInfo } from '../../../../types/userInfo';
 
 const { Option } = Select;
 

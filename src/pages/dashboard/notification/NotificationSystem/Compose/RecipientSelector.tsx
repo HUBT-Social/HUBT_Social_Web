@@ -2,8 +2,7 @@ import React, { FC } from 'react';
 import { Row, Col, Radio, Select, Alert, Progress, Typography, Avatar } from 'antd';
 import { UserOutlined, TeamOutlined, GlobalOutlined, BookOutlined, UsergroupAddOutlined, CrownOutlined } from '@ant-design/icons';
 import { useNotificationContext } from '../../contexts/NotificationContext';
-import { UserInfo } from '../../../../../types/user';
-
+import { UserInfo } from '../../../../../types/userInfo';
 const { Title, Text } = Typography;
 
 interface UserAvaible {

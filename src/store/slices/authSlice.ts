@@ -4,8 +4,8 @@ import storage from 'redux-persist/lib/storage';
 import instance from '../../config/axios';
 import { RootState } from '../store';
 import {USER_ENDPOINTS } from '../../services/endpoints';
-import { handleLoginSuccess, handleLogout } from '../../helper/tokenHelper';
-import { LoginResponse, UserToken } from '../../types/user';
+import { LoginResponse, UserToken } from '../../types/userInfo';
+//mport { handleLoginSuccess, handleLogout } from '../../helper/tokenHelper';
 
 
 // ----------------------------
@@ -126,7 +126,6 @@ const authSlice = createSlice({
       state.userInfo = null;
       state.error = null;
       state.token = null;
-      handleLogout();
     },
     clearError(state) {
       state.error = null;
@@ -140,7 +139,6 @@ const authSlice = createSlice({
         state.error = null;
       })
       .addCase(loginRequest.fulfilled, (state, action: PayloadAction<LoginResponse>) => {
-        handleLoginSuccess(action.payload);
         state.loading = false;
         state.isAuthenticated = true;
         state.user = action.payload;

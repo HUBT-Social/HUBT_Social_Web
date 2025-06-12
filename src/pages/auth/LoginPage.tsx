@@ -12,7 +12,6 @@ import {
 } from '../../store/slices/authSlice';
 import { selectSettings } from '../../store/slices/settingSlice';
 import type { AppDispatch } from '../../store/store';
-import { storageService } from '../../helper/tokenHelper';
 import {TokenManager}  from '../../config/axios';
 
 
@@ -42,7 +41,7 @@ const LoginPage: React.FC = () => {
           throw new Error('Invalid or expired token');
         }
       } catch {
-        storageService.clear();
+        TokenManager.clearToken();
         dispatch(clearError());
       } finally {
         setIsLoading(false);

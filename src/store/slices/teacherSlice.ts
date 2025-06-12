@@ -9,9 +9,7 @@ import { persistReducer } from 'redux-persist';
 import storage from 'redux-persist/lib/storage';
 import { RootState } from '../store';
 import instance from '../../config/axios';
-import { getTokensFromLocalStorage } from '../../helper/tokenHelper';
-import { UserInfo } from '../../types/user';
-
+import { UserInfo } from '../../types/userInfo';
 
 // Interface for filters
 interface FilterParams {
@@ -133,9 +131,6 @@ export const addTeacher = createAsyncThunk<UserInfo, UserInfo, { rejectValue: st
   'teachers/add',
   async (newTeacher, { rejectWithValue }) => {
     try {
-      const token = getTokensFromLocalStorage();
-      if (!token) return rejectWithValue('Không tìm thấy token xác thực');
-
       const res = await instance.USER_SERVICE.post('/api/user/add-user', newTeacher);
       return res.user;
     } catch (error: any) {
@@ -151,9 +146,6 @@ export const setTeacher = createAsyncThunk<UserInfo | null, UserInfo, { rejectVa
   'teachers/set',
   async (updatedTeacher, { rejectWithValue }) => {
     try {
-      const token = getTokensFromLocalStorage();
-      if (!token) return rejectWithValue('Không tìm thấy token xác thực');
-
       const res = await instance.USER_SERVICE.put('/api/user/update-user-admin', updatedTeacher);
       return res;
     } catch (error: any) {
@@ -169,9 +161,6 @@ export const deleteTeacher = createAsyncThunk<string, string, { rejectValue: str
   'teachers/delete',
   async (username, { rejectWithValue }) => {
     try {
-      const token = getTokensFromLocalStorage();
-      if (!token) return rejectWithValue('Không tìm thấy token xác thực');
-
       await instance.USER_SERVICE.delete(`/api/user/delete-user/${username}`);
       return username;
     } catch (error: any) {

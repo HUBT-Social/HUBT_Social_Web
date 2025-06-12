@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Table, Tag } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { UserInfo } from '../../../types/user';
+import { UserInfo } from '../../../types/userInfo';
 
 interface Props {
   teachers: UserInfo[];

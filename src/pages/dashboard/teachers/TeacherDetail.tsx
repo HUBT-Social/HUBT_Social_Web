@@ -6,7 +6,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { updatePasswordAsync, UpdatePasswordRequest } from '../../../services/userService/updatePassword';
 import { selectTeachers, setTeacher } from '../../../store/slices/teacherSlice';
 import { AppDispatch } from '../../../store/store';
-import { UserInfo } from '../../../types/user';
 import ChatPopup from './detail/ChatPopup';
 import EditTeacherModal from './detail/EditTeacherModal';
 import EmailModal from './detail/EmailModal';
@@ -14,6 +13,7 @@ import NotificationModal from './detail/NotificationModal';
 import TeacherAvatar from './detail/TeacherAvatar';
 import TeacherInfo from './detail/TeacherInfo';
 import UpdatePasswordModal from './detail/UpdatePasswordModal';
+import { UserInfo } from '../../../types/userInfo';
 
 // API giả lập
 const createChatRoomAPIAsync = async () => {

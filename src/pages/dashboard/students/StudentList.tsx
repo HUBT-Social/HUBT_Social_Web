@@ -15,10 +15,10 @@ import {
   selectCurrentFilters,
 } from '../../../store/slices/studentSlice';
 import { AppDispatch } from '../../../store/store';
-import { UserInfo } from '../../../types/user';
 import StudentDetail from './StudentDetail';
 import StudentEmpty from './StudentEmpty';
 import StudentTable from './StudentTable';
+import { UserInfo } from '../../../types/userInfo';
 
 const StudentList: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();

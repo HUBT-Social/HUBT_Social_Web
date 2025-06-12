@@ -11,7 +11,7 @@ import {
 import type { IconComponentProps } from '@ant-design/icons/lib/components/Icon';
 import type { FC } from 'react';
 import { Stats, Template } from '../../../../types/Notification';
-import { UserInfo } from '../../../../types/user';
+import { UserInfo } from '../../../../types/userInfo';
 
 // Define the type for Ant Design icons
 type AntDesignIcon = FC<IconComponentProps>;
