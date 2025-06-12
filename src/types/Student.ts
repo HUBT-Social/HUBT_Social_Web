@@ -7,17 +7,17 @@ export interface AverageScore {
   diemTB4: number; // Đổi tên để rõ ràng hơn (diemTB4 -> gpa4)
 }
 
-export interface AcademicPerformance {
-  subjectName: string; // Đổi tên từ tenMonHoc để thống nhất tiếng Anh
-  score: number; // Đổi tên từ diem để thống nhất tiếng Anh
-}
+// export interface AcademicPerformance {
+//   subjectName: string; // Đổi tên từ tenMonHoc để thống nhất tiếng Anh
+//   score: number; // Đổi tên từ diem để thống nhất tiếng Anh
+// }
 
-export interface Student extends UserInfo, AverageScore {
-  faculty: string;
-  course: string;
-  academicStatus: AcademicStatus; // Sử dụng type AcademicStatus
-  subjects?: AcademicPerformance[];
-}
+// export interface Student extends UserInfo, AverageScore {
+//   faculty: string;
+//   course: string;
+//   academicStatus: AcademicStatus; // Sử dụng type AcademicStatus
+//   subjects?: AcademicPerformance[];
+// }
 
 // Utility types
 export type StudentStatus = 'Active' | 'OnLeave' | 'DroppedOut' | 'Graduated' | 'Warning'; // Đổi tên để rõ ràng và thống nhất tiếng Anh
@@ -115,26 +115,26 @@ export const getGPAColor = (gpa: number): string => {
  * @param student - The object to validate.
  * @returns True if the object is a valid Student, false otherwise.
  */
-export const isValidStudent = (student: unknown): student is Student => {
-  if (typeof student !== 'object' || student === null) return false;
+// export const isValidStudent = (student: unknown): student is Student => {
+//   if (typeof student !== 'object' || student === null) return false;
 
-  const s = student as Partial<Student>;
-  return (
-    typeof s.userName === 'string' &&
-    typeof s.firstName === 'string' &&
-    typeof s.lastName === 'string' &&
-    typeof s.faculty === 'string' &&
-    typeof s.course === 'string' &&
-    typeof s.diemTB10 === 'number' &&
-    typeof s.diemTB4 === 'number' &&
-    typeof s.id === 'string' &&
-    (s.email === null || typeof s.email === 'string') &&
-    (s.avataUrl === null || typeof s.avataUrl === 'string') &&
-    (s.phoneNumber === null || typeof s.phoneNumber === 'string') &&
-    (s.fcmToken === null || typeof s.fcmToken === 'string') &&
-    (s.className === null || typeof s.className === 'string')
-  );
-};
+//   const s = student as Partial<Student>;
+//   return (
+//     typeof s.userName === 'string' &&
+//     typeof s.firstName === 'string' &&
+//     typeof s.lastName === 'string' &&
+//     typeof s.faculty === 'string' &&
+//     typeof s.course === 'string' &&
+//     typeof s.diemTB10 === 'number' &&
+//     typeof s.diemTB4 === 'number' &&
+//     typeof s.id === 'string' &&
+//     (s.email === null || typeof s.email === 'string') &&
+//     (s.avataUrl === null || typeof s.avataUrl === 'string') &&
+//     (s.phoneNumber === null || typeof s.phoneNumber === 'string') &&
+//     (s.fcmToken === null || typeof s.fcmToken === 'string') &&
+//     (s.className === null || typeof s.className === 'string')
+//   );
+// };
 
 /**
  * Validates if a student's GPA is within acceptable ranges.

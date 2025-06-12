@@ -513,24 +513,7 @@ export type AcademicStatus =
  * @param student - The object to validate.
  * @returns True if the object is a valid Student, false otherwise.
  */
-// export const isValidStudent = (student: unknown): student is Student => {
-//   if (typeof student !== 'object' || student === null) return false;
 
-//   const s = student as Partial<Student>;
-//   return (
-//     typeof s.userName === 'string' &&
-//     typeof s.fullName === 'string' &&
-//     typeof s.faculty === 'string' &&
-//     typeof s.course === 'string' &&
-//     typeof s.gpa10 === 'number' &&
-//     typeof s.gpa4 === 'number' &&
-//     (s.className === null || typeof s.className === 'string') &&
-//     (s.avatar === null || typeof s.avatar === 'string') &&
-//     isValidUserRole(s.role)
-//   );
-// };
-
-// Define types for notification type optio
 
 // Define types for notifications (consistent with NotificationProvider.tsx)
 export interface Notification {
